@@ -28,6 +28,9 @@ namespace JoinThePac
             //Io.Debug($"Built Map{Environment.NewLine}{map}");
 
             var myPlayer = new Player();
+
+            var agent = new ReactAgent(map, myPlayer);
+
             // game loop
             while (true)
             {
@@ -66,7 +69,6 @@ namespace JoinThePac
 
                 // Write an action using Console.WriteLine()
                 // To debug: Console.Error.WriteLine("Debug messages...");
-                var agent = new ReactAgent(map, myPlayer);
                 Io.WriteLine(agent.GetAction()); // MOVE <pacId> <x> <y>
             }
         }

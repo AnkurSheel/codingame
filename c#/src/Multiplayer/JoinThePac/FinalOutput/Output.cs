@@ -7,14 +7,14 @@ using System.Text;
 using System.IO;
 
 
- // 08/05/2020 07:26
+ // 08/05/2020 08:29
 
 
 namespace JoinThePac
 {
     public static class Constants
     {
-        public static readonly bool IsDebugOn = true;
+        public static readonly bool IsDebugOn = false;
 
         public static readonly bool IsForInput = false;
 
@@ -50,6 +50,9 @@ namespace JoinThePac
             //Io.Debug($"Built Map{Environment.NewLine}{map}");
 
             var myPlayer = new Player();
+
+            var agent = new ReactAgent(map, myPlayer);
+
             // game loop
             while (true)
             {
@@ -88,7 +91,6 @@ namespace JoinThePac
 
                 // Write an action using Console.WriteLine()
                 // To debug: Console.Error.WriteLine("Debug messages...");
-                var agent = new ReactAgent(map, myPlayer);
                 Io.WriteLine(agent.GetAction()); // MOVE <pacId> <x> <y>
             }
         }
@@ -103,10 +105,28 @@ namespace JoinThePac.Agents
 
         private readonly Player _myPlayer;
 
+        private bool _alreadyWentToCenter;
+
+        private readonly int _centerX;
+
+        private readonly int _centerY;
+
         public ReactAgent(Map map, Player myPlayer)
         {
             _map = map;
             _myPlayer = myPlayer;
+            _alreadyWentToCenter = false;
+
+            _centerX = _map.Width / 2;
+            _centerY = _map.Height / 2;
+
+            var mapCell = map.Cells[_centerY, _centerX];
+            while (mapCell.Type != CellType.Floor)
+            {
+                mapCell = map.Cells[_centerY + 1, _centerX + 1];
+                _centerX = mapCell.X;
+                _centerY = mapCell.Y;
+            }
         }
 
         public string GetAction()
@@ -120,7 +140,22 @@ namespace JoinThePac.Agents
                     return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
                 }
             }
-            return $"MOVE {pac.Id} {_map.Width/2} {_map.Height/2}";
+
+            if (_alreadyWentToCenter || pac.X == _centerX && pac.Y == _centerY)
+            {
+                Io.Debug("here");
+                _alreadyWentToCenter = true;
+
+                foreach (var mapCell in _map.Cells)
+                {
+                    if (mapCell.HasPellet)
+                    {
+                        return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
+                    }
+                }
+            }
+
+            return $"MOVE {pac.Id} {_centerX} {_centerY}";
         }
     }
 }

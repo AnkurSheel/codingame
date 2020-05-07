@@ -4,7 +4,7 @@ namespace JoinThePac
 {
     public static class Constants
     {
-        public static readonly bool IsDebugOn = true;
+        public static readonly bool IsDebugOn = false;
 
         public static readonly bool IsForInput = false;
 
