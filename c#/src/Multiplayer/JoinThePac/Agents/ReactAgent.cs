@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Text;
+﻿using System.Text;
 
 using JoinThePac.Models;
 
@@ -36,7 +35,7 @@ namespace JoinThePac.Agents
         {
             var action = new StringBuilder();
 
-            foreach (var pac in _game.MyPlayer.Pacs)
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
                 var cell = _game.Map.Cells[pac.Y, pac.X];
                 action.Append(GetMoveActionForPac(cell, pac));
@@ -50,7 +49,7 @@ namespace JoinThePac.Agents
         {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
-                if (neighbour.HasPellet && !IsOpponentPacInCell(neighbour))
+                if (neighbour.HasPellet && !IsPacInCell(neighbour))
                 {
                     {
                         return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
@@ -64,21 +63,37 @@ namespace JoinThePac.Agents
 
                 foreach (var mapCell in _game.Map.Cells)
                 {
-                    if (mapCell.HasPellet && !IsOpponentPacInCell(mapCell))
+                    if (mapCell.HasPellet && !IsPacInCell(mapCell))
                     {
-                        {
-                            return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
-                        }
+                        return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
                     }
                 }
             }
 
-            return $"MOVE {pac.Id} {_centerX} {_centerY}";
+            return pac.IsInSamePosition()
+                       ? $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}"
+                       : $"MOVE {pac.Id} {_centerX} {_centerY}";
         }
 
-        private bool IsOpponentPacInCell(Cell mapCell)
+        private bool IsPacInCell(Cell mapCell)
         {
-            return _game.OpponentPlayer.Pacs.Any(pac => pac.X != mapCell.X && pac.Y == _centerY);
+            foreach (var (_, pac) in _game.OpponentPlayer.Pacs)
+            {
+                if (pac.X == mapCell.X && pac.Y == _centerY)
+                {
+                    return true;
+                }
+            }
+
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
+            {
+                if (pac.X == mapCell.X && pac.Y == _centerY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

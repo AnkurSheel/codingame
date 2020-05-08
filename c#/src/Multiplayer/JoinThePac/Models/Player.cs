@@ -6,11 +6,23 @@ namespace JoinThePac.Models
     {
         public Player()
         {
-            Pacs = new List<Pac>();
+            Pacs = new Dictionary<int, Pac>();
         }
 
         public int Score { get; set; }
 
-        public List<Pac> Pacs { get; }
+        public Dictionary<int, Pac> Pacs { get; }
+
+        public void UpdatePac(int id, int x, int y)
+        {
+            if (!Pacs.ContainsKey(id))
+            {
+                Pacs[id] = new Pac(id, x, y);
+            }
+            else
+            {
+                Pacs[id].Update(x, y);
+            }
+        }
     }
 }

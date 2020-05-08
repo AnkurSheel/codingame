@@ -56,11 +56,11 @@ namespace JoinThePac
                 var abilityCooldown = int.Parse(inputs[6]); // unused in wood leagues
                 if (mine)
                 {
-                    MyPlayer.Pacs.Add(new Pac(pacId, x, y));
+                    MyPlayer.UpdatePac(pacId, x, y);
                 }
                 else
                 {
-                    OpponentPlayer.Pacs.Add(new Pac(pacId, x, y));
+                    OpponentPlayer.UpdatePac(pacId, x, y);
                 }
             }
 
@@ -77,8 +77,6 @@ namespace JoinThePac
 
         private void Reset()
         {
-            MyPlayer.Pacs.Clear();
-            OpponentPlayer.Pacs.Clear();
             Map.ClearPellets();
         }
     }

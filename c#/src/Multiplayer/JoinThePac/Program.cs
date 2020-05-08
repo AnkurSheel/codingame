@@ -10,6 +10,8 @@ namespace JoinThePac
     {
         private static void Main(string[] args)
         {
+            Io.Initialize();
+
             var game = new Game();
 
             game.InitializeMap();
