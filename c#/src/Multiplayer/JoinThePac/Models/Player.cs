@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace JoinThePac.Models
 {
@@ -22,6 +23,14 @@ namespace JoinThePac.Models
             else
             {
                 Pacs[id].Update(x, y);
+            }
+        }
+
+        public void Reset()
+        {
+            foreach (var (_, pac) in Pacs)
+            {
+                pac.Reset();
             }
         }
     }

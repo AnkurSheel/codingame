@@ -78,6 +78,8 @@ namespace JoinThePac
         private void Reset()
         {
             Map.ClearPellets();
+            MyPlayer.Reset();
+            OpponentPlayer.Reset();
         }
     }
 }

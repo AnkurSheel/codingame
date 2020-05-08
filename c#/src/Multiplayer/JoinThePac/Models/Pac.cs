@@ -12,11 +12,14 @@
 
         private int _previousY = -1;
 
+        public bool IsAlive { get; private set; }
+
         public Pac(int id, int x, int y)
         {
             Id = id;
             X = x;
             Y = y;
+            IsAlive = true;
         }
 
         public bool IsInSamePosition()
@@ -30,6 +33,12 @@
             _previousY = Y;
             X = x;
             Y = y;
+            IsAlive = true;
+        }
+
+        public void Reset()
+        {
+            IsAlive = false;
         }
     }
 }
