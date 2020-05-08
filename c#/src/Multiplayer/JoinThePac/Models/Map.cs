@@ -69,17 +69,33 @@ namespace JoinThePac.Models
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.Append("  |");
+            for (var i = 0; i < Width; i++)
+            {
+                sb.Append($"{i:D2} ");
+            }
+
+            sb.AppendLine();
+            for (var i = 0; i < Width; i++)
+            {
+                sb.Append($"---");
+            }
+            sb.AppendLine();
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)
                 {
+                    if (j == 0)
+                    {
+                        sb.Append($"{i:D2}|");
+                    }
                     if (Cells[i, j].Type == CellType.Floor)
                     {
-                        sb.Append($"{Cells[i,j].Neighbours.Count}");
+                        sb.Append($"{Cells[i,j].Neighbours.Count:D2} ");
                     }
                     else if (Cells[i, j].Type == CellType.Wall)
                     {
-                        sb.Append('#');
+                        sb.Append("## ");
                     }
                 }
 

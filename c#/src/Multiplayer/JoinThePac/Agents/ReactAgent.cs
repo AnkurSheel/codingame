@@ -1,6 +1,8 @@
 ﻿using System.Text;
+using System.Threading;
 
 using JoinThePac.Models;
+using JoinThePac.Services;
 
 namespace JoinThePac.Agents
 {
@@ -37,23 +39,24 @@ namespace JoinThePac.Agents
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                var cell = _game.Map.Cells[pac.Y, pac.X];
-                action.Append(GetMoveActionForPac(cell, pac));
+                action.Append(GetMoveAction(pac));
                 action.Append(" | ");
             }
 
             return action.ToString();
         }
 
-        private string GetMoveActionForPac(Cell cell, Pac pac)
+        private string GetMoveAction(Pac pac)
         {
+            var cell = _game.Map.Cells[pac.Y, pac.X];
+
+            Io.Debug($"ID: {pac.Id} {cell.Neighbours.Count}"); 
             foreach (var (_, neighbour) in cell.Neighbours)
             {
+                Io.Debug($"neighbour {neighbour.X} {neighbour.Y} {neighbour.HasPellet}");
                 if (neighbour.HasPellet && !IsPacInCell(neighbour))
                 {
-                    {
-                        return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
-                    }
+                    return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
                 }
             }
 
@@ -81,6 +84,7 @@ namespace JoinThePac.Agents
             {
                 if (pac.X == mapCell.X && pac.Y == _centerY)
                 {
+                    Io.Debug($"opponent {pac.Id }in {mapCell.X} {mapCell.Y}");
                     return true;
                 }
             }
@@ -89,6 +93,7 @@ namespace JoinThePac.Agents
             {
                 if (pac.X == mapCell.X && pac.Y == _centerY)
                 {
+                    Io.Debug($"my pac {pac.Id }in {mapCell.X} {mapCell.Y}");
                     return true;
                 }
             }
