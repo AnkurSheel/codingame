@@ -52,7 +52,7 @@ namespace JoinThePac.Agents
         {
             var cell = _game.Map.Cells[pac.Y, pac.X];
 
-            Io.Debug($"ID: {pac.Id} {cell.Neighbours.Count}");
+            Io.Debug($"ID: {pac.Id} {pac.X} {pac.Y} {cell.Neighbours.Count}");
             foreach (var (_, neighbour) in cell.Neighbours)
             {
                 Io.Debug($"neighbour {neighbour.X} {neighbour.Y} {neighbour.HasPellet}");
@@ -84,7 +84,7 @@ namespace JoinThePac.Agents
         {
             foreach (var (_, pac) in _game.OpponentPlayer.Pacs)
             {
-                if (pac.X == mapCell.X && pac.Y == _centerY)
+                if (pac.X == mapCell.X && pac.Y == mapCell.Y)
                 {
                     Io.Debug($"opponent {pac.Id}in {mapCell.X} {mapCell.Y}");
                     return true;
@@ -93,7 +93,7 @@ namespace JoinThePac.Agents
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                if (pac.X == mapCell.X && pac.Y == _centerY)
+                if (pac.X == mapCell.X && pac.Y == mapCell.Y)
                 {
                     Io.Debug($"my pac {pac.Id}in {mapCell.X} {mapCell.Y}");
                     return true;
