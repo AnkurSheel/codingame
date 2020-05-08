@@ -8,11 +8,13 @@ namespace JoinThePac
         public Game()
         {
             MyPlayer = new Player();
+            OpponentPlayer = new Player();
         }
 
         public Map Map { get; private set; }
 
         public Player MyPlayer { get; }
+        public Player OpponentPlayer { get; }
 
         public void InitializeMap()
         {
@@ -37,7 +39,7 @@ namespace JoinThePac
             var inputs = Io.ReadLine().Split(' ');
             MyPlayer.Score = int.Parse(inputs[0]);
 
-            var opponentScore = int.Parse(inputs[1]);
+            OpponentPlayer.Score = int.Parse(inputs[1]);
             var visiblePacCount = int.Parse(Io.ReadLine()); // all your pacs and enemy pacs in sight
 
             for (var i = 0; i < visiblePacCount; i++)
@@ -52,7 +54,15 @@ namespace JoinThePac
                 var abilityCooldown = int.Parse(inputs[6]); // unused in wood leagues
                 if (mine)
                 {
-                    MyPlayer.Pac = new Pac(pacId, x, y);
+                    if (pacId == 0)
+                    {
+
+                        MyPlayer.Pac = new Pac(pacId, x, y);
+                    }
+                }
+                else
+                {
+                    OpponentPlayer.Pac = new Pac(pacId, x, y);
                 }
             }
 

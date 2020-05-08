@@ -49,7 +49,7 @@ namespace JoinThePac.Agents
 
                 foreach (var mapCell in _game.Map.Cells)
                 {
-                    if (mapCell.HasPellet)
+                    if (mapCell.HasPellet && !IsOpponentPacInCell(mapCell))
                     {
                         return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
                     }
@@ -57,6 +57,11 @@ namespace JoinThePac.Agents
             }
 
             return $"MOVE {pac.Id} {_centerX} {_centerY}";
+        }
+
+        private bool IsOpponentPacInCell(Cell mapCell)
+        {
+            return (_game.OpponentPlayer.Pac.X != mapCell.X || _game.OpponentPlayer.Pac.Y == _centerY);
         }
     }
 }
