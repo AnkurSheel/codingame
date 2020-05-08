@@ -14,6 +14,7 @@ namespace JoinThePac
         public Map Map { get; private set; }
 
         public Player MyPlayer { get; }
+
         public Player OpponentPlayer { get; }
 
         public void InitializeMap()
@@ -36,6 +37,7 @@ namespace JoinThePac
 
         public void ReadTurn()
         {
+            Reset();
             var inputs = Io.ReadLine().Split(' ');
             MyPlayer.Score = int.Parse(inputs[0]);
 
@@ -54,19 +56,14 @@ namespace JoinThePac
                 var abilityCooldown = int.Parse(inputs[6]); // unused in wood leagues
                 if (mine)
                 {
-                    if (pacId == 0)
-                    {
-
-                        MyPlayer.Pac = new Pac(pacId, x, y);
-                    }
+                    MyPlayer.Pacs.Add(new Pac(pacId, x, y));
                 }
                 else
                 {
-                    OpponentPlayer.Pac = new Pac(pacId, x, y);
+                    OpponentPlayer.Pacs.Add(new Pac(pacId, x, y));
                 }
             }
 
-            Map.ClearPellets();
             var visiblePelletCount = int.Parse(Io.ReadLine()); // all pellets in sight
             for (var i = 0; i < visiblePelletCount; i++)
             {
@@ -76,6 +73,13 @@ namespace JoinThePac
                 var value = int.Parse(inputs[2]); // amount of points this pellet is worth
                 Map.Cells[y, x].Pellet = value;
             }
+        }
+
+        private void Reset()
+        {
+            MyPlayer.Pacs.Clear();
+            OpponentPlayer.Pacs.Clear();
+            Map.ClearPellets();
         }
     }
 }

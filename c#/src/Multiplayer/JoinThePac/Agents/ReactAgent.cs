@@ -1,5 +1,7 @@
-﻿using JoinThePac.Models;
-using JoinThePac.Services;
+﻿using System.Linq;
+using System.Text;
+
+using JoinThePac.Models;
 
 namespace JoinThePac.Agents
 {
@@ -32,26 +34,41 @@ namespace JoinThePac.Agents
 
         public string Think()
         {
-            var pac = _game.MyPlayer.Pac;
-            var cell = _game.Map.Cells[pac.Y, pac.X];
+            var action = new StringBuilder();
+
+            foreach (var pac in _game.MyPlayer.Pacs)
+            {
+                var cell = _game.Map.Cells[pac.Y, pac.X];
+                action.Append(GetMoveActionForPac(cell, pac));
+                action.Append(" | ");
+            }
+
+            return action.ToString();
+        }
+
+        private string GetMoveActionForPac(Cell cell, Pac pac)
+        {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
-                if (neighbour.HasPellet)
+                if (neighbour.HasPellet && !IsOpponentPacInCell(neighbour))
                 {
-                    return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
+                    {
+                        return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
+                    }
                 }
             }
 
             if (_alreadyWentToCenter || pac.X == _centerX && pac.Y == _centerY)
             {
-                Io.Debug("here");
                 _alreadyWentToCenter = true;
 
                 foreach (var mapCell in _game.Map.Cells)
                 {
                     if (mapCell.HasPellet && !IsOpponentPacInCell(mapCell))
                     {
-                        return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
+                        {
+                            return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
+                        }
                     }
                 }
             }
@@ -61,7 +78,7 @@ namespace JoinThePac.Agents
 
         private bool IsOpponentPacInCell(Cell mapCell)
         {
-            return (_game.OpponentPlayer.Pac.X != mapCell.X || _game.OpponentPlayer.Pac.Y == _centerY);
+            return _game.OpponentPlayer.Pacs.Any(pac => pac.X != mapCell.X && pac.Y == _centerY);
         }
     }
 }
