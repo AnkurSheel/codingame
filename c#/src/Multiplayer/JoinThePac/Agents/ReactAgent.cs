@@ -51,6 +51,18 @@ namespace JoinThePac.Agents
         private string GetMoveAction(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Y, pac.X];
+            if (pac.IsInSamePosition())
+            {
+                foreach (var (_, neighbour) in cell.Neighbours)
+                {
+                    if (!IsPacInCell(neighbour))
+                    {
+                        return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
+                    }
+                }
+                return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
+            }
+
 
             Io.Debug($"ID: {pac.Id} {pac.X} {pac.Y} {cell.Neighbours.Count}");
             foreach (var (_, neighbour) in cell.Neighbours)
@@ -75,9 +87,7 @@ namespace JoinThePac.Agents
                 }
             }
 
-            return pac.IsInSamePosition()
-                       ? $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}"
-                       : $"MOVE {pac.Id} {_centerX} {_centerY}";
+            return $"MOVE {pac.Id} {_centerX} {_centerY}";
         }
 
         private bool IsPacInCell(Cell mapCell)
