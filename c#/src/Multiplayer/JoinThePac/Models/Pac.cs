@@ -4,35 +4,29 @@
     {
         public int Id { get; }
 
-        public int X { get; private set; }
+        public Coordinate Position { get; }
 
-        public int Y { get; private set; }
-
-        private int _previousX = -1;
-
-        private int _previousY = -1;
+        private Coordinate _previousPosition;
 
         public bool IsAlive { get; private set; }
 
         public Pac(int id, int x, int y)
         {
             Id = id;
-            X = x;
-            Y = y;
+            Position = new Coordinate(x, y);
             IsAlive = true;
+            _previousPosition = new Coordinate(-1, -1);
         }
 
         public bool IsInSamePosition()
         {
-            return _previousX == X && _previousY == Y;
+            return _previousPosition.IsSame(Position);
         }
 
         public void Update(int x, int y)
         {
-            _previousX = X;
-            _previousY = Y;
-            X = x;
-            Y = y;
+            _previousPosition = new Coordinate(Position);
+            Position.Update(x, y);
             IsAlive = true;
         }
 

@@ -9,9 +9,7 @@ namespace JoinThePac.Agents
     {
         private bool _alreadyWentToCenter;
 
-        private readonly int _centerX;
-
-        private readonly int _centerY;
+        private readonly Coordinate _centerPosition;
 
         private readonly Game _game;
 
@@ -20,15 +18,13 @@ namespace JoinThePac.Agents
             _game = game;
             _alreadyWentToCenter = false;
 
-            _centerX = _game.Map.Width / 2;
-            _centerY = _game.Map.Height / 2;
+            _centerPosition = new Coordinate(_game.Map.Width / 2, _game.Map.Height / 2);
 
-            var mapCell = _game.Map.Cells[_centerY, _centerX];
+            var mapCell = _game.Map.Cells[_centerPosition.Y, _centerPosition.X];
             while (mapCell.Type != CellType.Floor)
             {
-                mapCell = _game.Map.Cells[_centerY + 1, _centerX + 1];
-                _centerX = mapCell.X;
-                _centerY = mapCell.Y;
+                mapCell = _game.Map.Cells[_centerPosition.Y + 1, _centerPosition.X + 1];
+                _centerPosition.Update(mapCell.Position);
             }
         }
 
@@ -50,31 +46,31 @@ namespace JoinThePac.Agents
 
         private string GetMoveAction(Pac pac)
         {
-            var cell = _game.Map.Cells[pac.Y, pac.X];
+            var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             if (pac.IsInSamePosition())
             {
                 foreach (var (_, neighbour) in cell.Neighbours)
                 {
                     if (!IsPacInCell(neighbour))
                     {
-                        return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
+                        return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                     }
                 }
+
                 return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
             }
 
-
-            Io.Debug($"ID: {pac.Id} {pac.X} {pac.Y} {cell.Neighbours.Count}");
+            Io.Debug($"ID: {pac.Id} {pac.Position.X} {pac.Position.Y} {cell.Neighbours.Count}");
             foreach (var (_, neighbour) in cell.Neighbours)
             {
-                Io.Debug($"neighbour {neighbour.X} {neighbour.Y} {neighbour.HasPellet}");
+                Io.Debug($"neighbour {neighbour.Position.X} {neighbour.Position.Y} {neighbour.HasPellet}");
                 if (neighbour.HasPellet && !IsPacInCell(neighbour))
                 {
-                    return $"MOVE {pac.Id} {neighbour.X} {neighbour.Y}";
+                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
             }
 
-            if (_alreadyWentToCenter || pac.X == _centerX && pac.Y == _centerY)
+            if (_alreadyWentToCenter || pac.Position.Equals(_centerPosition))
             {
                 _alreadyWentToCenter = true;
 
@@ -82,30 +78,28 @@ namespace JoinThePac.Agents
                 {
                     if (mapCell.HasPellet && !IsPacInCell(mapCell))
                     {
-                        return $"MOVE {pac.Id} {mapCell.X} {mapCell.Y}";
+                        return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
                     }
                 }
             }
 
-            return $"MOVE {pac.Id} {_centerX} {_centerY}";
+            return $"MOVE {pac.Id} {_centerPosition.X} {_centerPosition.Y}";
         }
 
         private bool IsPacInCell(Cell mapCell)
         {
             foreach (var (_, pac) in _game.OpponentPlayer.Pacs)
             {
-                if (pac.X == mapCell.X && pac.Y == mapCell.Y)
+                if (pac.Position.Equals(mapCell.Position))
                 {
-                    Io.Debug($"opponent {pac.Id}in {mapCell.X} {mapCell.Y}");
                     return true;
                 }
             }
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                if (pac.X == mapCell.X && pac.Y == mapCell.Y)
+                if (pac.Position.Equals(mapCell.Position))
                 {
-                    Io.Debug($"my pac {pac.Id}in {mapCell.X} {mapCell.Y}");
                     return true;
                 }
             }
