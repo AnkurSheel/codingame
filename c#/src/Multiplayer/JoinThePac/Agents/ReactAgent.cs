@@ -49,41 +49,69 @@ namespace JoinThePac.Agents
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             if (pac.IsInSamePosition())
             {
-                foreach (var (_, neighbour) in cell.Neighbours)
-                {
-                    if (!IsPacInCell(neighbour))
-                    {
-                        return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
-                    }
-                }
-
-                return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
+                return GetMoveIfInSamePosition(pac, cell);
             }
 
-            Io.Debug($"ID: {pac.Id} {pac.Position.X} {pac.Position.Y} {cell.Neighbours.Count}");
+            var action = MoveToNeighbour(pac, cell);
+            if (!string.IsNullOrEmpty(action))
+            {
+                return action;
+            }
+
+            if (_alreadyWentToCenter || pac.Position.Equals(_centerPosition))
+            {
+                var moveAction = MoveToRandomPellet(pac);
+                if (!string.IsNullOrEmpty(moveAction))
+                {
+                    return moveAction;
+                }
+            }
+
+            return $"MOVE {pac.Id} {_centerPosition.X} {_centerPosition.Y}";
+        }
+
+        private string MoveToRandomPellet(Pac pac)
+        {
+            _alreadyWentToCenter = true;
+
+            foreach (var mapCell in _game.Map.Cells)
+            {
+                if (mapCell.HasPellet && !IsPacInCell(mapCell))
+                {
+                    return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
+                }
+            }
+
+            return null;
+        }
+
+        private string MoveToNeighbour(Pac pac, Cell cell)
+        {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
                 Io.Debug($"neighbour {neighbour.Position.X} {neighbour.Position.Y} {neighbour.HasPellet}");
                 if (neighbour.HasPellet && !IsPacInCell(neighbour))
                 {
-                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
-                }
-            }
-
-            if (_alreadyWentToCenter || pac.Position.Equals(_centerPosition))
-            {
-                _alreadyWentToCenter = true;
-
-                foreach (var mapCell in _game.Map.Cells)
-                {
-                    if (mapCell.HasPellet && !IsPacInCell(mapCell))
                     {
-                        return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
+                        return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                     }
                 }
             }
 
-            return $"MOVE {pac.Id} {_centerPosition.X} {_centerPosition.Y}";
+            return null;
+        }
+
+        private string GetMoveIfInSamePosition(Pac pac, Cell cell)
+        {
+            foreach (var (_, neighbour) in cell.Neighbours)
+            {
+                if (!IsPacInCell(neighbour))
+                {
+                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
+                }
+            }
+
+            return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
         }
 
         private bool IsPacInCell(Cell mapCell)
