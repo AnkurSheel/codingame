@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 using JoinThePac.Models;
 using JoinThePac.Services;
@@ -12,6 +13,8 @@ namespace JoinThePac.Agents
         private readonly Coordinate _centerPosition;
 
         private readonly Game _game;
+
+        private readonly HashSet<Cell> _chosenCells = new HashSet<Cell>();
 
         public ReactAgent(Game game)
         {
@@ -30,6 +33,7 @@ namespace JoinThePac.Agents
 
         public string Think()
         {
+            _chosenCells.Clear();
             var action = new StringBuilder();
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
@@ -50,6 +54,13 @@ namespace JoinThePac.Agents
             if (pac.IsInSamePosition())
             {
                 return GetMoveIfInSamePosition(pac, cell);
+            }
+
+            var superPellet = GetSuperPellet();
+            if (superPellet != null)
+            {
+                _chosenCells.Add(superPellet);
+                return $"MOVE {pac.Id} {superPellet.Position.X} {superPellet.Position.Y}";
             }
 
             var action = MoveToNeighbour(pac, cell);
@@ -76,8 +87,9 @@ namespace JoinThePac.Agents
 
             foreach (var mapCell in _game.Map.Cells)
             {
-                if (mapCell.HasPellet && !IsPacInCell(mapCell))
+                if (mapCell.HasPellet && !_chosenCells.Contains(mapCell) && !IsPacInCell(mapCell))
                 {
+                    _chosenCells.Add(mapCell);
                     return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
                 }
             }
@@ -90,11 +102,10 @@ namespace JoinThePac.Agents
             foreach (var (_, neighbour) in cell.Neighbours)
             {
                 Io.Debug($"neighbour {neighbour.Position.X} {neighbour.Position.Y} {neighbour.HasPellet}");
-                if (neighbour.HasPellet && !IsPacInCell(neighbour))
+                if (neighbour.HasPellet && !_chosenCells.Contains(neighbour) && !IsPacInCell(neighbour))
                 {
-                    {
-                        return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
-                    }
+                    _chosenCells.Add(neighbour);
+                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
             }
 
@@ -105,13 +116,27 @@ namespace JoinThePac.Agents
         {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
-                if (!IsPacInCell(neighbour))
+                if (!_chosenCells.Contains(neighbour) && !IsPacInCell(neighbour))
                 {
+                    _chosenCells.Add(neighbour);
                     return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
             }
 
             return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
+        }
+
+        private Cell GetSuperPellet()
+        {
+            foreach (var cell in _game.Map.Cells)
+            {
+                if (cell.HasSuperPellet && !_chosenCells.Contains(cell))
+                {
+                    return cell;
+                }
+            }
+
+            return null;
         }
 
         private bool IsPacInCell(Cell mapCell)

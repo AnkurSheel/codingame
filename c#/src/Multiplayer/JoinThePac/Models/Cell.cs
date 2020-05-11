@@ -23,5 +23,39 @@ namespace JoinThePac.Models
         public int Pellet { get; set; }
 
         public bool HasPellet => Pellet > 0;
+
+        public bool HasSuperPellet => Pellet == 10;
+
+        protected bool Equals(Cell other)
+        {
+            return Equals(Position, other.Position);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((Cell)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return (Position != null
+                        ? Position.GetHashCode()
+                        : 0);
+        }
     }
 }
