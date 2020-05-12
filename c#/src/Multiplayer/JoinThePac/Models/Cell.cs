@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace JoinThePac.Models
 {
-    [DebuggerDisplay("x = {X} y = {Y} type={Type}")]
+    [DebuggerDisplay("Position = {Position} type={Type}")]
     public class Cell
     {
         public Cell(int x, int y, CellType cellType)
@@ -11,8 +11,11 @@ namespace JoinThePac.Models
             Position = new Coordinate(x, y);
             Type = cellType;
             Neighbours = new Dictionary<Direction, Cell>();
-            Pellet = 0;
+            VisibleCells = new HashSet<Cell>();
+            PelletValue = -1;
         }
+
+        public int PelletValue { get; set; }
 
         public Coordinate Position { get; }
 
@@ -20,11 +23,11 @@ namespace JoinThePac.Models
 
         public Dictionary<Direction, Cell> Neighbours { get; set; }
 
-        public int Pellet { get; set; }
+        public HashSet<Cell> VisibleCells { get; set; }
 
-        public bool HasPellet => Pellet > 0;
+        public bool HasPellet => PelletValue > 0;
 
-        public bool HasSuperPellet => Pellet == 10;
+        public bool HasSuperPellet => PelletValue == 10;
 
         protected bool Equals(Cell other)
         {
@@ -43,7 +46,7 @@ namespace JoinThePac.Models
                 return true;
             }
 
-            if (obj.GetType() != this.GetType())
+            if (obj.GetType() != GetType())
             {
                 return false;
             }
@@ -53,9 +56,9 @@ namespace JoinThePac.Models
 
         public override int GetHashCode()
         {
-            return (Position != null
-                        ? Position.GetHashCode()
-                        : 0);
+            return Position != null
+                       ? Position.GetHashCode()
+                       : 0;
         }
     }
 }

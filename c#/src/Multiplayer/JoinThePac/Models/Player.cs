@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace JoinThePac.Models
 {
@@ -30,6 +31,18 @@ namespace JoinThePac.Models
             foreach (var (_, pac) in Pacs)
             {
                 pac.Reset();
+            }
+        }
+
+        public void ResetVisibleCells(Map map)
+        {
+            foreach (var (_, pac) in Pacs)
+            {
+                var pacCell = map.Cells[pac.Position.Y, pac.Position.X];
+                foreach (var visibleCell in pacCell.VisibleCells)
+                {
+                    visibleCell.PelletValue = 0;
+                }
             }
         }
     }

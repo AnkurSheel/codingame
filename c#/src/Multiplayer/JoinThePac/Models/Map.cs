@@ -46,6 +46,35 @@ namespace JoinThePac.Models
                     CheckAndAddNeighbour(Cells[i, j], j, i + 1, Direction.South);
                 }
             }
+
+            for (var i = 0; i < Height; i++)
+            {
+                for (var j = 0; j < Width; j++)
+                {
+                    AddVisibleCells(Cells[i, j], Direction.North);
+                    AddVisibleCells(Cells[i, j], Direction.South);
+                    AddVisibleCells(Cells[i, j], Direction.East);
+                    AddVisibleCells(Cells[i, j], Direction.West);
+                }
+            }
+        }
+
+        private void AddVisibleCells(Cell cell, Direction direction)
+        {
+            var currentCell = cell;
+            while (true)
+            {
+                if (currentCell.Neighbours.ContainsKey(direction))
+                {
+                    var neighbour = currentCell.Neighbours[direction];
+                    cell.VisibleCells.Add(neighbour);
+                    currentCell = neighbour;
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private void CheckAndAddNeighbour(Cell cell, int x, int y, Direction direction)
@@ -54,18 +83,15 @@ namespace JoinThePac.Models
             {
                 x = Width - 1;
             }
-
-            if (x >= Width - 1)
+            else if (x >= Width - 1)
             {
                 x = 0;
             }
-
             if (y < 0)
             {
                 y = Height - 1;
             }
-
-            if (y >= Height - 1)
+            else if (y >= Height - 1)
             {
                 y = 0;
             }
@@ -116,14 +142,6 @@ namespace JoinThePac.Models
             }
 
             return sb.ToString();
-        }
-
-        public void ClearPellets()
-        {
-            foreach (var cell in Cells)
-            {
-                cell.Pellet = 0;
-            }
         }
     }
 }

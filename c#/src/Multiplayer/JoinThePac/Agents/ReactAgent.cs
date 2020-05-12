@@ -87,7 +87,7 @@ namespace JoinThePac.Agents
 
             foreach (var mapCell in _game.Map.Cells)
             {
-                if (mapCell.HasPellet && !_chosenCells.Contains(mapCell) && !IsPacInCell(mapCell))
+                if ((mapCell.HasPellet || mapCell.PelletValue == -1) && !_chosenCells.Contains(mapCell) && !IsPacInCell(mapCell))
                 {
                     _chosenCells.Add(mapCell);
                     return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";

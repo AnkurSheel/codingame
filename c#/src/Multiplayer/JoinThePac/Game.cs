@@ -64,6 +64,8 @@ namespace JoinThePac
                 }
             }
 
+            MyPlayer.ResetVisibleCells(Map);
+
             var visiblePelletCount = int.Parse(Io.ReadLine()); // all pellets in sight
             for (var i = 0; i < visiblePelletCount; i++)
             {
@@ -71,13 +73,12 @@ namespace JoinThePac
                 var x = int.Parse(inputs[0]);
                 var y = int.Parse(inputs[1]);
                 var value = int.Parse(inputs[2]); // amount of points this pellet is worth
-                Map.Cells[y, x].Pellet = value;
+                Map.Cells[y, x].PelletValue = value;
             }
         }
 
         private void Reset()
         {
-            Map.ClearPellets();
             MyPlayer.Reset();
             OpponentPlayer.Reset();
         }
