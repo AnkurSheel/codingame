@@ -39,6 +39,7 @@ namespace JoinThePac.Models
             foreach (var (_, pac) in Pacs)
             {
                 var pacCell = map.Cells[pac.Position.Y, pac.Position.X];
+                pacCell.PelletValue = 0;
                 foreach (var visibleCell in pacCell.VisibleCells)
                 {
                     visibleCell.PelletValue = 0;
