@@ -27,7 +27,7 @@ namespace JoinThePac.Models
             return Math.Abs(X - pos.X) + Math.Abs(Y - pos.Y);
         }
 
-        public string ToOutput()
+        public override string ToString()
         {
             return $"{X} {Y}";
         }

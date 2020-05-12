@@ -57,6 +57,10 @@ namespace JoinThePac.Agents
                     action.Append(GetMoveAction(pac));
                     action.Append(" | ");
                 }
+                else
+                {
+                    _chosenCells.Remove(pac.Id);
+                }
             }
 
             return action.ToString();
@@ -67,13 +71,14 @@ namespace JoinThePac.Agents
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             if (pac.IsInSamePosition())
             {
-                _chosenCells.Remove(pac.Id);
+                Io.Debug($"{pac.Id} Same position {pac.Position}");
                 return GetMoveIfInSamePosition(pac, cell);
             }
 
             if (_chosenCells.ContainsKey(pac.Id))
             {
                 var position = _chosenCells[pac.Id].Position;
+                Io.Debug($"{pac.Id} Chosen Cell {position}");
                 return $"MOVE {pac.Id} {position.X} {position.Y}";
             }
 
@@ -81,6 +86,7 @@ namespace JoinThePac.Agents
             if (superPellet != null)
             {
                 _chosenCells.Add(pac.Id, superPellet);
+                Io.Debug($"{pac.Id} Super Pellet {superPellet.Position}");
                 return $"MOVE {pac.Id} {superPellet.Position.X} {superPellet.Position.Y}";
             }
 
@@ -99,6 +105,7 @@ namespace JoinThePac.Agents
                 }
             }
 
+            Io.Debug($"{pac.Id} Center {_centerPosition}");
             return $"MOVE {pac.Id} {_centerPosition.X} {_centerPosition.Y}";
         }
 
@@ -110,7 +117,8 @@ namespace JoinThePac.Agents
             {
                 if ((mapCell.HasPellet || mapCell.PelletValue == -1) && !_chosenCells.ContainsValue(mapCell) && !IsPacInCell(mapCell))
                 {
-                    _chosenCells.Add(pac.Id, mapCell);
+                    Io.Debug($"{pac.Id} Random pellet {mapCell.Position}");
+                    _chosenCells[pac.Id] = mapCell;
                     return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
                 }
             }
@@ -124,6 +132,7 @@ namespace JoinThePac.Agents
             {
                 if (neighbour.HasPellet && !_chosenCells.ContainsValue(neighbour) && !IsPacInCell(neighbour))
                 {
+                    Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
                     _chosenCells.Add(pac.Id, neighbour);
                     return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
@@ -138,11 +147,13 @@ namespace JoinThePac.Agents
             {
                 if (!_chosenCells.ContainsValue(neighbour) && !IsPacInCell(neighbour))
                 {
-                    _chosenCells.Add(pac.Id, neighbour);
+                    Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
+                    _chosenCells[pac.Id] = neighbour;
                     return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
             }
 
+            Io.Debug($"{pac.Id} Random");
             return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
         }
 
