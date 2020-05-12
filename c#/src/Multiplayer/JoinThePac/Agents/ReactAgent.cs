@@ -96,7 +96,7 @@ namespace JoinThePac.Agents
                 return action;
             }
 
-            if (_alreadyWentToCenter || pac.Position.Equals(_centerPosition))
+            if (_alreadyWentToCenter || pac.Position.IsSame(_centerPosition))
             {
                 var moveAction = MoveToRandomPellet(pac);
                 if (!string.IsNullOrEmpty(moveAction))
@@ -115,7 +115,7 @@ namespace JoinThePac.Agents
 
             foreach (var mapCell in _game.Map.Cells)
             {
-                if ((mapCell.HasPellet || mapCell.PelletValue == -1) && !_chosenCells.ContainsValue(mapCell) && !IsPacInCell(mapCell))
+                if (mapCell.Type == CellType.Floor && (mapCell.HasPellet || mapCell.PelletValue == -1) && !_chosenCells.ContainsValue(mapCell) && !IsPacInCell(mapCell))
                 {
                     Io.Debug($"{pac.Id} Random pellet {mapCell.Position}");
                     _chosenCells[pac.Id] = mapCell;
