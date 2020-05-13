@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using JoinThePac.Models;
@@ -46,6 +47,7 @@ namespace JoinThePac.Agents
                 if (_chosenCells.ContainsKey(pac.Id))
                 {
                     var chosenCell = _chosenCells[pac.Id];
+
                     if (pac.Position.IsSame(chosenCell.Position) || chosenCell.PelletValue == 0)
                     {
                         Io.Debug($"removing {pac.Id} {chosenCell.Position.X} {chosenCell.Position.Y}");
@@ -78,17 +80,27 @@ namespace JoinThePac.Agents
 
             if (_chosenCells.ContainsKey(pac.Id))
             {
-                var position = _chosenCells[pac.Id].Position;
-                Io.Debug($"{pac.Id} Chosen Cell {position}");
-                return $"MOVE {pac.Id} {position.X} {position.Y}";
+                var path = BFS.GetPath(cell, _chosenCells[pac.Id], currentCell => IsPacInCell(currentCell));
+                if (path != null)
+                {
+                    var nextCell = path.First();
+                    Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
+                    return $"MOVE {pac.Id} {nextCell.Position.X} {nextCell.Position.Y}";
+                }
             }
 
             var superPellet = GetSuperPellet(cell);
             if (superPellet != null)
             {
-                _chosenCells.Add(pac.Id, superPellet);
-                Io.Debug($"{pac.Id} Super Pellet {superPellet.Position}");
-                return $"MOVE {pac.Id} {superPellet.Position.X} {superPellet.Position.Y}";
+                var path = BFS.GetPath(cell, superPellet, currentCell => IsPacInCell(currentCell));
+                if (path != null)
+                {
+                    var nextCell = path.First();
+                    _chosenCells[pac.Id] = superPellet;
+
+                    Io.Debug($"{pac.Id} Super Pellet {superPellet.Position} {nextCell.Position}");
+                    return $"MOVE {pac.Id} {nextCell.Position.X} {nextCell.Position.Y}";
+                }
             }
 
             var action = MoveToNeighbour(pac, cell);
@@ -136,7 +148,7 @@ namespace JoinThePac.Agents
                 if (neighbour.HasPellet && !_chosenCells.ContainsValue(neighbour) && !IsPacInCell(neighbour))
                 {
                     Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
-                    _chosenCells.Add(pac.Id, neighbour);
+                    _chosenCells[pac.Id] = neighbour;
                     return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
                 }
             }
