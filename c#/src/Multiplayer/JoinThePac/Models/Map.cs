@@ -64,15 +64,15 @@ namespace JoinThePac.Models
             var currentCell = cell;
             while (true)
             {
-                if (currentCell.Neighbours.ContainsKey(direction))
+                if (currentCell == cell || !currentCell.Neighbours.ContainsKey(direction))
+                {
+                    break;
+                }
+                else
                 {
                     var neighbour = currentCell.Neighbours[direction];
                     cell.VisibleCells.Add(neighbour);
                     currentCell = neighbour;
-                }
-                else
-                {
-                    break;
                 }
             }
         }
