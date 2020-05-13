@@ -1,4 +1,6 @@
-﻿using JoinThePac.Models;
+﻿using System.Text;
+
+using JoinThePac.Models;
 using JoinThePac.Services;
 
 namespace JoinThePac
@@ -75,12 +77,52 @@ namespace JoinThePac
                 var value = int.Parse(inputs[2]); // amount of points this pellet is worth
                 Map.Cells[y, x].PelletValue = value;
             }
+
+            //DebugPelletValues();
         }
 
         private void Reset()
         {
             MyPlayer.Reset();
             OpponentPlayer.Reset();
+        }
+
+        private void DebugPelletValues()
+        {
+            var sb = new StringBuilder();
+            for (var i = 0; i < Map.Height; i++)
+            {
+                for (var j = 0; j < Map.Width; j++)
+                {
+                    if (Map.Cells[i, j].Type == CellType.Floor)
+                    {
+                        var pelletValue = Map.Cells[i, j].PelletValue;
+                        var a = 'U';
+                        if (pelletValue == 10)
+                        {
+                            a = 'S';
+                        }
+                        else if (pelletValue == 0)
+                        {
+                            a = 'E';
+                        }
+                        else if (pelletValue == 1)
+                        {
+                            a = 'P';
+                        }
+
+                        sb.Append($"{a}");
+                    }
+                    else if (Map.Cells[i, j].Type == CellType.Wall)
+                    {
+                        sb.Append("#");
+                    }
+                }
+
+                sb.AppendLine();
+            }
+
+            Io.Debug(sb.ToString());
         }
     }
 }
