@@ -1,6 +1,5 @@
-﻿using System.Text;
-
-using JoinThePac.Services;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace JoinThePac.Models
 {
@@ -12,11 +11,14 @@ namespace JoinThePac.Models
 
         public Cell[,] Cells { get; }
 
+        public HashSet<Cell> SuperPellets { get; }
+
         public Map(int width, int height)
         {
             Width = width;
             Height = height;
             Cells = new Cell[height, width];
+            SuperPellets = new HashSet<Cell>();
         }
 
         public void Build(int row, string line)
@@ -87,6 +89,7 @@ namespace JoinThePac.Models
             {
                 x = 0;
             }
+
             if (y < 0)
             {
                 y = Height - 1;
@@ -142,6 +145,21 @@ namespace JoinThePac.Models
             }
 
             return sb.ToString();
+        }
+
+        public void SetCellValue(int x, int y, int pelletValue)
+        {
+            var cell = Cells[y, x];
+            cell.PelletValue = pelletValue;
+            if (pelletValue == 10)
+            {
+                SuperPellets.Add(cell);
+            }
+        }
+
+        public void ResetSuperPellets()
+        {
+            SuperPellets.Clear();
         }
     }
 }
