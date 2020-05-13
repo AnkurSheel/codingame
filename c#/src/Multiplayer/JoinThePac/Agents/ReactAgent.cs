@@ -149,6 +149,12 @@ namespace JoinThePac.Agents
                 return GetMoveIfInSamePosition(pac, cell);
             }
 
+            var action = MoveToNeighbourPellet(pac, cell);
+            if (action != null)
+            {
+                return action;
+            }
+
             if (_chosenCells.ContainsKey(pac.Id))
             {
                 var path = BFS.GetPath(cell,
@@ -161,12 +167,6 @@ namespace JoinThePac.Agents
                     Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
                     return new MoveAction(nextCell.Position);
                 }
-            }
-
-            var action = MoveToNeighbour(pac, cell);
-            if (action != null)
-            {
-                return action;
             }
 
             if (_alreadyWentToCenter || pac.Position.IsSame(_centerPosition))
@@ -188,21 +188,37 @@ namespace JoinThePac.Agents
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             var closestCell = BFS.GetClosestCell(cell,
                                                  currentCell => currentCell.Type == CellType.Floor
-                                                                && (currentCell.HasPellet || currentCell.PelletValue == -1)
+                                                                && currentCell.HasPellet
                                                                 && !_chosenCells.ContainsValue(currentCell)
                                                                 && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
                                                                 && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
             if (closestCell != null)
             {
-                Io.Debug($"{pac.Id} Random pellet {closestCell.Position}");
+                Io.Debug($"{pac.Id} Random Uneaten pellet {closestCell.Position}");
                 _chosenCells[pac.Id] = closestCell;
                 return new MoveAction(closestCell.Position);
+            }
+            else
+            {
+                closestCell = BFS.GetClosestCell(cell,
+                                                 currentCell => currentCell.Type == CellType.Floor
+                                                                && currentCell.PelletValue == -1
+                                                                && !_chosenCells.ContainsValue(currentCell)
+                                                                && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
+                                                                && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
+
+                if (closestCell != null)
+                {
+                    Io.Debug($"{pac.Id} Random Unknown pellet {closestCell.Position}");
+                    _chosenCells[pac.Id] = closestCell;
+                    return new MoveAction(closestCell.Position);
+                }
             }
 
             return null;
         }
 
-        private MoveAction MoveToNeighbour(Pac pac, Cell cell)
+        private MoveAction MoveToNeighbourPellet(Pac pac, Cell cell)
         {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
@@ -211,7 +227,7 @@ namespace JoinThePac.Agents
                     && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
                     && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
                 {
-                    Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
+                    Io.Debug($"{pac.Id} Neighbour Pellet {neighbour.Position}");
                     _chosenCells[pac.Id] = neighbour;
                     return new MoveAction(neighbour.Position);
                 }
