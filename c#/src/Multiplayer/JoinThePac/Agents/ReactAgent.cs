@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 
+using JoinThePac.Actions;
 using JoinThePac.Models;
 using JoinThePac.Services;
 
@@ -16,6 +17,8 @@ namespace JoinThePac.Agents
         private readonly Game _game;
 
         private readonly Dictionary<int, Cell> _chosenCells = new Dictionary<int, Cell>();
+
+        private readonly Dictionary<int, MoveAction> Actions = new Dictionary<int, MoveAction>();
 
         public ReactAgent(Game game)
         {
@@ -34,13 +37,13 @@ namespace JoinThePac.Agents
 
         public string Think()
         {
-            var action = new StringBuilder();
-
             Io.Debug("Chosen cells ");
             foreach (var chosenCell in _chosenCells)
             {
                 Io.Debug($"{chosenCell.Key} : {chosenCell.Value.Position.X}, {chosenCell.Value.Position.Y}");
             }
+
+            Actions.Clear();
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
@@ -57,8 +60,7 @@ namespace JoinThePac.Agents
 
                 if (pac.IsAlive)
                 {
-                    action.Append(GetMoveAction(pac));
-                    action.Append(" | ");
+                    Actions[pac.Id] = GetMoveAction(pac);
                 }
                 else
                 {
@@ -66,10 +68,17 @@ namespace JoinThePac.Agents
                 }
             }
 
-            return action.ToString();
+            var output = new StringBuilder();
+            foreach (var (pacId, action )in Actions)
+            {
+                output.Append(action.GetAction(pacId));
+                output.Append(" | ");
+            }
+
+            return output.ToString();
         }
 
-        private string GetMoveAction(Pac pac)
+        private MoveAction GetMoveAction(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             if (pac.IsInSamePosition())
@@ -85,7 +94,7 @@ namespace JoinThePac.Agents
                 {
                     var nextCell = path.First();
                     Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
-                    return $"MOVE {pac.Id} {nextCell.Position.X} {nextCell.Position.Y}";
+                    return new MoveAction(nextCell.Position);
                 }
             }
 
@@ -99,12 +108,12 @@ namespace JoinThePac.Agents
                     _chosenCells[pac.Id] = superPellet;
 
                     Io.Debug($"{pac.Id} Super Pellet {superPellet.Position} {nextCell.Position}");
-                    return $"MOVE {pac.Id} {nextCell.Position.X} {nextCell.Position.Y}";
+                    return new MoveAction(nextCell.Position);
                 }
             }
 
             var action = MoveToNeighbour(pac, cell);
-            if (!string.IsNullOrEmpty(action))
+            if (action != null)
             {
                 return action;
             }
@@ -112,17 +121,17 @@ namespace JoinThePac.Agents
             if (_alreadyWentToCenter || pac.Position.IsSame(_centerPosition))
             {
                 var moveAction = MoveToRandomPellet(pac);
-                if (!string.IsNullOrEmpty(moveAction))
+                if (moveAction != null)
                 {
                     return moveAction;
                 }
             }
 
             Io.Debug($"{pac.Id} Center {_centerPosition}");
-            return $"MOVE {pac.Id} {_centerPosition.X} {_centerPosition.Y}";
+            return new MoveAction(_centerPosition);
         }
 
-        private string MoveToRandomPellet(Pac pac)
+        private MoveAction MoveToRandomPellet(Pac pac)
         {
             _alreadyWentToCenter = true;
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
@@ -135,13 +144,13 @@ namespace JoinThePac.Agents
             {
                 Io.Debug($"{pac.Id} Random pellet {closestCell.Position}");
                 _chosenCells[pac.Id] = closestCell;
-                return $"MOVE {pac.Id} {closestCell.Position.X} {closestCell.Position.Y}";
+                return new MoveAction(closestCell.Position);
             }
 
             return null;
         }
 
-        private string MoveToNeighbour(Pac pac, Cell cell)
+        private MoveAction MoveToNeighbour(Pac pac, Cell cell)
         {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
@@ -149,14 +158,14 @@ namespace JoinThePac.Agents
                 {
                     Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
                     _chosenCells[pac.Id] = neighbour;
-                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
+                    return new MoveAction(neighbour.Position);
                 }
             }
 
             return null;
         }
 
-        private string GetMoveIfInSamePosition(Pac pac, Cell cell)
+        private MoveAction GetMoveIfInSamePosition(Pac pac, Cell cell)
         {
             foreach (var (_, neighbour) in cell.Neighbours)
             {
@@ -164,12 +173,13 @@ namespace JoinThePac.Agents
                 {
                     Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
                     _chosenCells[pac.Id] = neighbour;
-                    return $"MOVE {pac.Id} {neighbour.Position.X} {neighbour.Position.Y}";
+                    return new MoveAction(neighbour.Position);
                 }
             }
 
             Io.Debug($"{pac.Id} Random");
-            return $"MOVE {pac.Id} {Constants.Random.Next(_game.Map.Width)} {Constants.Random.Next(_game.Map.Height)}";
+            var randomPosition = new Coordinate(Constants.Random.Next(_game.Map.Width), Constants.Random.Next(_game.Map.Height));
+            return new MoveAction(randomPosition);
         }
 
         private Cell GetSuperPellet(Cell cell)
