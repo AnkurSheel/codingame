@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using JoinThePac.Models;
@@ -7,7 +8,7 @@ namespace JoinThePac.Services
 {
     public static class BFS
     {
-        public static Cell GetClosestSuperPelletCell(Cell from, Dictionary<int, Cell> chosenCells)
+        public static Cell GetClosestCell(Cell from, Func<Cell, bool> condition)
         {
             var open = new List<Cell> { from };
             var seen = new HashSet<Cell> { from };
@@ -16,7 +17,7 @@ namespace JoinThePac.Services
                 var currentCell = open.First();
                 open.RemoveAt(0);
 
-                if (currentCell.HasSuperPellet && !chosenCells.ContainsValue(currentCell))
+                if (condition(currentCell))
                 {
                     return currentCell;
                 }

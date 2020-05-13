@@ -35,11 +35,12 @@ namespace JoinThePac.Agents
         {
             var action = new StringBuilder();
 
-            Io.Debug($"Chosen cells ");
+            Io.Debug("Chosen cells ");
             foreach (var chosenCell in _chosenCells)
             {
                 Io.Debug($"{chosenCell.Key} : {chosenCell.Value.Position.X}, {chosenCell.Value.Position.Y}");
             }
+
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
                 if (_chosenCells.ContainsKey(pac.Id))
@@ -47,11 +48,11 @@ namespace JoinThePac.Agents
                     var chosenCell = _chosenCells[pac.Id];
                     if (pac.Position.IsSame(chosenCell.Position) || chosenCell.PelletValue == 0)
                     {
-                        Io.Debug($"removing {pac.Id} { chosenCell.Position.X} {chosenCell.Position.Y}");
+                        Io.Debug($"removing {pac.Id} {chosenCell.Position.X} {chosenCell.Position.Y}");
                         _chosenCells.Remove(pac.Id);
-
                     }
                 }
+
                 if (pac.IsAlive)
                 {
                     action.Append(GetMoveAction(pac));
@@ -112,15 +113,17 @@ namespace JoinThePac.Agents
         private string MoveToRandomPellet(Pac pac)
         {
             _alreadyWentToCenter = true;
-
-            foreach (var mapCell in _game.Map.Cells)
+            var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
+            var closestCell = BFS.GetClosestCell(cell,
+                                                 currentCell => currentCell.Type == CellType.Floor
+                                                                && (currentCell.HasPellet || currentCell.PelletValue == -1)
+                                                                && !_chosenCells.ContainsValue(currentCell)
+                                                                && !IsPacInCell(currentCell));
+            if (closestCell != null)
             {
-                if (mapCell.Type == CellType.Floor && (mapCell.HasPellet || mapCell.PelletValue == -1) && !_chosenCells.ContainsValue(mapCell) && !IsPacInCell(mapCell))
-                {
-                    Io.Debug($"{pac.Id} Random pellet {mapCell.Position}");
-                    _chosenCells[pac.Id] = mapCell;
-                    return $"MOVE {pac.Id} {mapCell.Position.X} {mapCell.Position.Y}";
-                }
+                Io.Debug($"{pac.Id} Random pellet {closestCell.Position}");
+                _chosenCells[pac.Id] = closestCell;
+                return $"MOVE {pac.Id} {closestCell.Position.X} {closestCell.Position.Y}";
             }
 
             return null;
@@ -159,14 +162,14 @@ namespace JoinThePac.Agents
 
         private Cell GetSuperPellet(Cell cell)
         {
-            return BFS.GetClosestSuperPelletCell(cell, _chosenCells);
+            return BFS.GetClosestCell(cell, currentCell => currentCell.HasSuperPellet && !_chosenCells.ContainsValue(currentCell));
         }
 
         private bool IsPacInCell(Cell mapCell)
         {
             foreach (var (_, pac) in _game.OpponentPlayer.Pacs)
             {
-                if (pac.Position.Equals(mapCell.Position))
+                if (pac.Position.IsSame(mapCell.Position))
                 {
                     return true;
                 }
@@ -174,7 +177,7 @@ namespace JoinThePac.Agents
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                if (pac.Position.Equals(mapCell.Position))
+                if (pac.Position.IsSame(mapCell.Position))
                 {
                     return true;
                 }
