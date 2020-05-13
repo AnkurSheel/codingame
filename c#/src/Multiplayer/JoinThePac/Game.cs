@@ -58,11 +58,11 @@ namespace JoinThePac
                 var abilityCooldown = int.Parse(inputs[6]); // unused in wood leagues
                 if (mine)
                 {
-                    MyPlayer.UpdatePac(pacId, x, y);
+                    MyPlayer.UpdatePac(pacId, x, y, PacTypeExtensions.FromString(typeId), speedTurnsLeft, abilityCooldown);
                 }
                 else
                 {
-                    OpponentPlayer.UpdatePac(pacId, x, y);
+                    OpponentPlayer.UpdatePac(pacId, x, y, PacTypeExtensions.FromString(typeId), speedTurnsLeft, abilityCooldown);
                 }
             }
 

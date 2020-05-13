@@ -18,7 +18,7 @@ namespace JoinThePac.Agents
 
         private readonly Dictionary<int, Cell> _chosenCells = new Dictionary<int, Cell>();
 
-        private readonly Dictionary<int, MoveAction> Actions = new Dictionary<int, MoveAction>();
+        private readonly Dictionary<int, IAction> Actions = new Dictionary<int, IAction>();
 
         private int _pacCount;
 
@@ -47,7 +47,14 @@ namespace JoinThePac.Agents
 
             Actions.Clear();
 
-            AddSuperPelletActions();
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
+            {
+                if (pac.AbilityCooldown == 0)
+                {
+                    Actions[pac.Id] = new SpeedAction();
+                }
+            }
+                AddSuperPelletActions();
 
             AddActionsForPacs();
 
@@ -134,7 +141,11 @@ namespace JoinThePac.Agents
                     }
                     else
                     {
-                        Actions[bestPac.Id] = new MoveAction(bestPath.First().Position);
+                        bestPath.Reverse();
+                        var cell = bestPac.SpeedTurnsLeft == 0 || bestPath.Count < 3
+                                       ? bestPath.Count < 2 ? bestPath.First() : bestPath.Skip(1).First()
+                                       : bestPath.Skip(2).First();
+                        Actions[bestPac.Id] = new MoveAction(cell.Position);
                     }
                 }
             }
@@ -163,7 +174,9 @@ namespace JoinThePac.Agents
                                                       || IsPacInCell(currentCell, _game.MyPlayer.Pacs));
                 if (path != null)
                 {
-                    var nextCell = path.First();
+                    var nextCell = pac.SpeedTurnsLeft == 0 || path.Count < 2
+                                   ? path.First()
+                                   : path.Skip(1).First();
                     Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
                     return new MoveAction(nextCell.Position);
                 }

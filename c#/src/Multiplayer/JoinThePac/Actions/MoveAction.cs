@@ -2,7 +2,7 @@
 
 namespace JoinThePac.Actions
 {
-    internal class MoveAction
+    internal class MoveAction : IAction
     {
         public MoveAction(Coordinate position)
         {

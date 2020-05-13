@@ -13,15 +13,21 @@ namespace JoinThePac.Models
 
         public Dictionary<int, Pac> Pacs { get; }
 
-        public void UpdatePac(int id, int x, int y)
+        public void UpdatePac(
+            int id,
+            int x,
+            int y,
+            PacType type,
+            int speedTurnsLeft,
+            int abilityCooldown)
         {
             if (!Pacs.ContainsKey(id))
             {
-                Pacs[id] = new Pac(id, x, y);
+                Pacs[id] = new Pac(id, x, y, type);
             }
             else
             {
-                Pacs[id].Update(x, y);
+                Pacs[id].Update(x, y, type, speedTurnsLeft, abilityCooldown);
             }
         }
 
