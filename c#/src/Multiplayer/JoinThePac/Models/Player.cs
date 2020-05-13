@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace JoinThePac.Models
 {
@@ -40,9 +39,12 @@ namespace JoinThePac.Models
             {
                 var pacCell = map.Cells[pac.Position.Y, pac.Position.X];
                 pacCell.PelletValue = 0;
-                foreach (var visibleCell in pacCell.VisibleCells)
+                if (pac.IsAlive)
                 {
-                    visibleCell.PelletValue = 0;
+                    foreach (var visibleCell in pacCell.VisibleCells)
+                    {
+                        visibleCell.PelletValue = 0;
+                    }
                 }
             }
         }

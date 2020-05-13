@@ -64,14 +64,16 @@ namespace JoinThePac.Models
         private void AddVisibleCells(Cell cell, Direction direction)
         {
             var currentCell = cell;
+            var count = 0;
             while (true)
             {
-                if (currentCell == cell || !currentCell.Neighbours.ContainsKey(direction))
+                if ((count > 0 && currentCell.Equals(cell)) || !currentCell.Neighbours.ContainsKey(direction))
                 {
                     break;
                 }
                 else
                 {
+                    count++;
                     var neighbour = currentCell.Neighbours[direction];
                     cell.VisibleCells.Add(neighbour);
                     currentCell = neighbour;
@@ -85,7 +87,7 @@ namespace JoinThePac.Models
             {
                 x = Width - 1;
             }
-            else if (x >= Width - 1)
+            else if (x >= Width)
             {
                 x = 0;
             }
@@ -94,7 +96,7 @@ namespace JoinThePac.Models
             {
                 y = Height - 1;
             }
-            else if (y >= Height - 1)
+            else if (y >= Height)
             {
                 y = 0;
             }
