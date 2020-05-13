@@ -47,6 +47,53 @@ namespace JoinThePac.Agents
 
             Actions.Clear();
 
+            AddSuperPelletActions();
+
+            AddActionsForPacs();
+
+            return BuildOutput();
+        }
+
+        private void AddActionsForPacs()
+        {
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
+            {
+                if (_chosenCells.ContainsKey(pac.Id))
+                {
+                    var chosenCell = _chosenCells[pac.Id];
+
+                    if (pac.Position.IsSame(chosenCell.Position) || chosenCell.PelletValue == 0)
+                    {
+                        Io.Debug($"removing {pac.Id} {chosenCell.Position.X} {chosenCell.Position.Y}");
+                        _chosenCells.Remove(pac.Id);
+                    }
+                }
+
+                if (pac.IsAlive && !Actions.ContainsKey(pac.Id))
+                {
+                    Actions[pac.Id] = GetMoveAction(pac);
+                }
+                else
+                {
+                    _chosenCells.Remove(pac.Id);
+                }
+            }
+        }
+
+        private string BuildOutput()
+        {
+            var output = new StringBuilder();
+            foreach (var (pacId, action )in Actions)
+            {
+                output.Append(action.GetAction(pacId));
+                output.Append(" | ");
+            }
+
+            return output.ToString();
+        }
+
+        private void AddSuperPelletActions()
+        {
             foreach (var superPellet in _game.Map.SuperPellets)
             {
                 List<Cell> bestPath = null;
@@ -91,38 +138,6 @@ namespace JoinThePac.Agents
                     }
                 }
             }
-
-            foreach (var (_, pac) in _game.MyPlayer.Pacs)
-            {
-                if (_chosenCells.ContainsKey(pac.Id))
-                {
-                    var chosenCell = _chosenCells[pac.Id];
-
-                    if (pac.Position.IsSame(chosenCell.Position) || chosenCell.PelletValue == 0)
-                    {
-                        Io.Debug($"removing {pac.Id} {chosenCell.Position.X} {chosenCell.Position.Y}");
-                        _chosenCells.Remove(pac.Id);
-                    }
-                }
-
-                if (pac.IsAlive && !Actions.ContainsKey(pac.Id))
-                {
-                    Actions[pac.Id] = GetMoveAction(pac);
-                }
-                else
-                {
-                    _chosenCells.Remove(pac.Id);
-                }
-            }
-
-            var output = new StringBuilder();
-            foreach (var (pacId, action )in Actions)
-            {
-                output.Append(action.GetAction(pacId));
-                output.Append(" | ");
-            }
-
-            return output.ToString();
         }
 
         private MoveAction GetMoveAction(Pac pac)
