@@ -72,8 +72,8 @@ namespace JoinThePac.Agents
                     var path = BFS.GetPath(superPellet,
                                            pacCell,
                                            currentCell => !currentCell.Equals(pacCell)
-                                                          && (IsPacInCell(currentCell, _game.MyPlayer.Pacs)
-                                                              || IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
+                                                          && (GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
+                                                              || IsOpponentInCell(pac, currentCell)
                                                               || _moveCells.Contains(currentCell)));
                     if (path != null)
                     {
@@ -167,8 +167,8 @@ namespace JoinThePac.Agents
             {
                 var path = BFS.GetPath(cell,
                                        _chosenCells[pac.Id],
-                                       currentCell => IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                      || IsPacInCell(currentCell, _game.MyPlayer.Pacs)
+                                       currentCell => IsOpponentInCell(pac, currentCell)
+                                                      || GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
                                                       || _moveCells.Contains(currentCell));
                 if (path != null)
                 {
@@ -201,8 +201,8 @@ namespace JoinThePac.Agents
             foreach (var (_, neighbour) in cell.Neighbours)
             {
                 if (!_chosenCells.ContainsValue(neighbour)
-                    && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                    && !IsOpponentInCell(pac, neighbour)
+                    && GetPacInCell(neighbour, _game.MyPlayer.Pacs) == null
                     && !_moveCells.Contains(neighbour))
                 {
                     Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
@@ -222,8 +222,8 @@ namespace JoinThePac.Agents
             {
                 if (neighbour.HasPellet
                     && !_chosenCells.ContainsValue(neighbour)
-                    && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                    && !IsOpponentInCell(pac, neighbour)
+                    && GetPacInCell(neighbour, _game.MyPlayer.Pacs) == null
                     && !_moveCells.Contains(neighbour))
                 {
                     cellsToConsider.Add(neighbour);
@@ -238,8 +238,8 @@ namespace JoinThePac.Agents
                     {
                         if (neighbour.HasPellet
                             && !_chosenCells.ContainsValue(neighbour)
-                            && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                            && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                            && !IsOpponentInCell(pac, neighbour)
+                            && GetPacInCell(neighbour, _game.MyPlayer.Pacs) == null
                             && !_moveCells.Contains(neighbour))
                         {
                             if (pac.SpeedTurnsLeft > 0)
@@ -268,8 +268,7 @@ namespace JoinThePac.Agents
 
         private MoveAction MoveToRandomPellet(Pac pac)
         {
-            var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-            var closestCell = GetClosestCell(cell);
+            var closestCell = GetClosestCell(pac);
             if (closestCell != null)
             {
                 Io.Debug($"{pac.Id} Random Uneaten pellet {closestCell.Position}");
@@ -281,25 +280,63 @@ namespace JoinThePac.Agents
             return null;
         }
 
-        private Cell GetClosestCell(Cell cell)
+        private Cell GetClosestCell(Pac pac)
         {
+            var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             return BFS.GetClosestCell(cell,
                                       currentCell => currentCell.Type == CellType.Floor
                                                      && currentCell.HasPellet
                                                      && !_chosenCells.ContainsValue(currentCell)
-                                                     && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                     && !IsPacInCell(currentCell, _game.MyPlayer.Pacs)
+                                                     && GetPacInCell(currentCell, _game.MyPlayer.Pacs) == null
+                                                     && !IsOpponentInCell(pac, currentCell)
                                                      && !_moveCells.Contains(currentCell));
         }
 
-        private bool IsPacInCell(Cell mapCell, Dictionary<int, Pac> pacs)
+        private Pac GetPacInCell(Cell mapCell, Dictionary<int, Pac> pacs)
         {
             foreach (var (_, pac) in pacs)
             {
                 if (pac.Position.IsSame(mapCell.Position))
                 {
-                    return true;
+                    return pac;
                 }
+            }
+
+            return null;
+        }
+
+        private bool IsOpponentInCell(Pac pac, Cell currentCell)
+        {
+            var open = new List<Cell> { currentCell };
+            var seen = new HashSet<Cell> { currentCell };
+
+            var count = 0;
+            while (open.Any())
+            {
+                var tempCell = open.First();
+                open.RemoveAt(0);
+
+                var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
+                if (opponentPac != null)
+                {
+                    if (!pac.CanEat(opponentPac.Type))
+                    {
+                        return true;
+                    }
+                }
+
+                if (count < 2)
+                {
+                    foreach (var (_, neighbour) in currentCell.Neighbours)
+                    {
+                        if (seen.Add(neighbour))
+                        {
+                            open.Add(neighbour);
+                        }
+                    }
+                }
+
+                count++;
             }
 
             return false;

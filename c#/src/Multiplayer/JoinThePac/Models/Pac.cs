@@ -44,5 +44,20 @@
         {
             IsAlive = false;
         }
+
+        public bool CanEat(PacType type)
+        {
+            switch (Type)
+            {
+                case PacType.Rock:
+                    return type == PacType.Scissors;
+                case PacType.Paper:
+                    return type == PacType.Rock;
+                case PacType.Scissors:
+                    return type == PacType.Paper;
+                default:
+                    return false;
+            }
+        }
     }
 }
