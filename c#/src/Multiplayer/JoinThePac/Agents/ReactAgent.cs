@@ -10,31 +10,15 @@ namespace JoinThePac.Agents
 {
     public class ReactAgent
     {
-        private bool _alreadyWentToCenter;
-
-        private readonly Coordinate _centerPosition;
-
         private readonly Game _game;
 
         private readonly Dictionary<int, Cell> _chosenCells = new Dictionary<int, Cell>();
 
-        private readonly Dictionary<int, IAction> Actions = new Dictionary<int, IAction>();
-
-        private int _pacCount;
+        private readonly Dictionary<int, IAction> _actions = new Dictionary<int, IAction>();
 
         public ReactAgent(Game game)
         {
             _game = game;
-            _alreadyWentToCenter = false;
-            _pacCount = _game.MyPlayer.Pacs.Count;
-            _centerPosition = new Coordinate(_game.Map.Width / 2, _game.Map.Height / 2);
-
-            var mapCell = _game.Map.Cells[_centerPosition.Y, _centerPosition.X];
-            while (mapCell.Type != CellType.Floor)
-            {
-                mapCell = _game.Map.Cells[_centerPosition.Y + 1, _centerPosition.X + 1];
-                _centerPosition.Update(mapCell.Position);
-            }
         }
 
         public string Think()
@@ -45,23 +29,29 @@ namespace JoinThePac.Agents
                 Io.Debug($"{chosenCell.Key} : {chosenCell.Value.Position.X}, {chosenCell.Value.Position.Y}");
             }
 
-            Actions.Clear();
+            _actions.Clear();
 
-            foreach (var (_, pac) in _game.MyPlayer.Pacs)
-            {
-                if (pac.AbilityCooldown == 0)
-                {
-                    Actions[pac.Id] = new SpeedAction();
-                }
-            }
-                AddSuperPelletActions();
+            AddSpeedAction();
 
-            AddActionsForPacs();
+            AddSuperPelletActions();
+
+            AddMoveActions();
 
             return BuildOutput();
         }
 
-        private void AddActionsForPacs()
+        private void AddSpeedAction()
+        {
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
+            {
+                if (pac.AbilityCooldown == 0)
+                {
+                    _actions[pac.Id] = new SpeedAction();
+                }
+            }
+        }
+
+        private void AddMoveActions()
         {
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
@@ -76,13 +66,16 @@ namespace JoinThePac.Agents
                     }
                 }
 
-                if (pac.IsAlive && !Actions.ContainsKey(pac.Id))
+                if (!_actions.ContainsKey(pac.Id))
                 {
-                    Actions[pac.Id] = GetMoveAction(pac);
-                }
-                else
-                {
-                    _chosenCells.Remove(pac.Id);
+                    if (pac.IsAlive)
+                    {
+                        _actions[pac.Id] = GetMoveAction(pac);
+                    }
+                    else
+                    {
+                        _chosenCells.Remove(pac.Id);
+                    }
                 }
             }
         }
@@ -90,7 +83,7 @@ namespace JoinThePac.Agents
         private string BuildOutput()
         {
             var output = new StringBuilder();
-            foreach (var (pacId, action )in Actions)
+            foreach (var (pacId, action )in _actions)
             {
                 output.Append(action.GetAction(pacId));
                 output.Append(" | ");
@@ -108,7 +101,7 @@ namespace JoinThePac.Agents
 
                 foreach (var (_, pac )in _game.MyPlayer.Pacs)
                 {
-                    if (!pac.IsAlive || Actions.ContainsKey(pac.Id))
+                    if (!pac.IsAlive || _actions.ContainsKey(pac.Id))
                     {
                         continue;
                     }
@@ -121,13 +114,10 @@ namespace JoinThePac.Agents
                                                               || IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)));
                     if (path != null)
                     {
-                        Io.Debug($"Super Pellet : {pac.Id} : {superPellet.Position} : {pac.Position}: {path.Count}");
-
                         if (bestPath == null || path.Count < bestPath.Count)
                         {
                             bestPath = path;
                             bestPac = pac;
-                            Io.Debug($"Best Path : {pac.Id} : {superPellet.Position} : {pac.Position}: {path.Count}");
                         }
                     }
                 }
@@ -137,7 +127,7 @@ namespace JoinThePac.Agents
                     _chosenCells[bestPac.Id] = superPellet;
                     if (bestPath.Count == 1)
                     {
-                        Actions[bestPac.Id] = new MoveAction(superPellet.Position);
+                        _actions[bestPac.Id] = new MoveAction(superPellet.Position);
                     }
                     else
                     {
@@ -145,7 +135,10 @@ namespace JoinThePac.Agents
                         var cell = bestPac.SpeedTurnsLeft == 0 || bestPath.Count < 3
                                        ? bestPath.Count < 2 ? bestPath.First() : bestPath.Skip(1).First()
                                        : bestPath.Skip(2).First();
-                        Actions[bestPac.Id] = new MoveAction(cell.Position);
+                        _actions[bestPac.Id] = new MoveAction(cell.Position);
+
+                        Io.Debug($"Super Pellet : {superPellet.Position} : {bestPac.Id} : {bestPac.Position}");
+
                     }
                 }
             }
@@ -154,13 +147,18 @@ namespace JoinThePac.Agents
         private MoveAction GetMoveAction(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
+            MoveAction action = null;
             if (pac.IsInSamePosition())
             {
                 Io.Debug($"{pac.Id} Same position {pac.Position}");
-                return GetMoveIfInSamePosition(pac, cell);
+                action = GetMoveIfInSamePosition(pac, cell);
+                if (action != null)
+                {
+                    return action;
+                }
             }
 
-            var action = MoveToNeighbourPellet(pac, cell);
+            action = MoveToNeighbourPellet(pac, cell);
             if (action != null)
             {
                 return action;
@@ -175,60 +173,44 @@ namespace JoinThePac.Agents
                 if (path != null)
                 {
                     var nextCell = pac.SpeedTurnsLeft == 0 || path.Count < 2
-                                   ? path.First()
-                                   : path.Skip(1).First();
+                                       ? path.First()
+                                       : path.Skip(1).First();
                     Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
                     return new MoveAction(nextCell.Position);
                 }
             }
 
-            if (_alreadyWentToCenter || pac.Position.IsSame(_centerPosition))
+            action = MoveToRandomPellet(pac);
+            if (action != null)
             {
-                var moveAction = MoveToRandomPellet(pac);
-                if (moveAction != null)
-                {
-                    return moveAction;
-                }
+                return action;
             }
 
-            Io.Debug($"{pac.Id} Center {_centerPosition}");
-            return new MoveAction(_centerPosition);
+            return new MoveAction(cell.Position);
+            ;
         }
 
         private MoveAction MoveToRandomPellet(Pac pac)
         {
-            _alreadyWentToCenter = true;
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-            var closestCell = BFS.GetClosestCell(cell,
-                                                 currentCell => currentCell.Type == CellType.Floor
-                                                                && currentCell.HasPellet
-                                                                && !_chosenCells.ContainsValue(currentCell)
-                                                                && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                                && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
+            var closestCell = GetClosestCell(cell);
             if (closestCell != null)
             {
                 Io.Debug($"{pac.Id} Random Uneaten pellet {closestCell.Position}");
                 _chosenCells[pac.Id] = closestCell;
                 return new MoveAction(closestCell.Position);
             }
-            else
-            {
-                closestCell = BFS.GetClosestCell(cell,
-                                                 currentCell => currentCell.Type == CellType.Floor
-                                                                && currentCell.PelletValue == -1
-                                                                && !_chosenCells.ContainsValue(currentCell)
-                                                                && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                                && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
-
-                if (closestCell != null)
-                {
-                    Io.Debug($"{pac.Id} Random Unknown pellet {closestCell.Position}");
-                    _chosenCells[pac.Id] = closestCell;
-                    return new MoveAction(closestCell.Position);
-                }
-            }
-
             return null;
+        }
+
+        private Cell GetClosestCell(Cell cell)
+        {
+            return BFS.GetClosestCell(cell,
+                                      currentCell => currentCell.Type == CellType.Floor
+                                                     && currentCell.HasPellet
+                                                     && !_chosenCells.ContainsValue(currentCell)
+                                                     && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
+                                                     && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
         }
 
         private MoveAction MoveToNeighbourPellet(Pac pac, Cell cell)
@@ -263,14 +245,7 @@ namespace JoinThePac.Agents
                 }
             }
 
-            Io.Debug($"{pac.Id} Random");
-            var randomPosition = new Coordinate(Constants.Random.Next(_game.Map.Width), Constants.Random.Next(_game.Map.Height));
-            return new MoveAction(randomPosition);
-        }
-
-        private Cell GetSuperPellet(Cell cell)
-        {
-            return BFS.GetClosestCell(cell, currentCell => currentCell.HasSuperPellet && !_chosenCells.ContainsValue(currentCell));
+            return null;
         }
 
         private bool IsPacInCell(Cell mapCell, Dictionary<int, Pac> pacs)

@@ -12,7 +12,7 @@ namespace JoinThePac.Models
             Type = cellType;
             Neighbours = new Dictionary<Direction, Cell>();
             VisibleCells = new HashSet<Cell>();
-            PelletValue = -1;
+            PelletValue = 1;
         }
 
         public int PelletValue { get; set; }
@@ -26,8 +26,6 @@ namespace JoinThePac.Models
         public HashSet<Cell> VisibleCells { get; set; }
 
         public bool HasPellet => PelletValue > 0;
-
-        public bool HasSuperPellet => PelletValue == 10;
 
         protected bool Equals(Cell other)
         {
