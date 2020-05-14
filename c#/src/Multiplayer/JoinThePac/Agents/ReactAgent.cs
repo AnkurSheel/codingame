@@ -14,6 +14,8 @@ namespace JoinThePac.Agents
 
         private readonly Dictionary<int, Cell> _chosenCells = new Dictionary<int, Cell>();
 
+        private readonly HashSet<Cell> _moveCells = new HashSet<Cell>();
+
         private readonly Dictionary<int, IAction> _actions = new Dictionary<int, IAction>();
 
         public ReactAgent(Game game)
@@ -30,6 +32,7 @@ namespace JoinThePac.Agents
             }
 
             _actions.Clear();
+            _moveCells.Clear();
 
             AddSpeedAction();
 
@@ -111,7 +114,8 @@ namespace JoinThePac.Agents
                                            pacCell,
                                            currentCell => !currentCell.Equals(pacCell)
                                                           && (IsPacInCell(currentCell, _game.MyPlayer.Pacs)
-                                                              || IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)));
+                                                              || IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
+                                                              || _moveCells.Contains(currentCell)));
                     if (path != null)
                     {
                         if (bestPath == null || path.Count < bestPath.Count)
@@ -127,14 +131,22 @@ namespace JoinThePac.Agents
                     _chosenCells[bestPac.Id] = superPellet;
                     if (bestPath.Count == 1)
                     {
+                        _moveCells.Add(superPellet);
                         _actions[bestPac.Id] = new MoveAction(superPellet.Position);
                     }
                     else
                     {
                         bestPath.Reverse();
-                        var cell = bestPac.SpeedTurnsLeft == 0 || bestPath.Count < 3
-                                       ? bestPath.Count < 2 ? bestPath.First() : bestPath.Skip(1).First()
-                                       : bestPath.Skip(2).First();
+                        var cell = bestPath.Count < 2
+                                       ? bestPath.First()
+                                       : bestPath.Skip(1).First();
+                        _moveCells.Add(cell);
+                        if (bestPac.SpeedTurnsLeft > 0 && bestPath.Count >= 3)
+                        {
+                            cell = bestPath.Skip(2).First();
+                            _moveCells.Add(cell);
+                        }
+
                         _actions[bestPac.Id] = new MoveAction(cell.Position);
 
                         Io.Debug($"Super Pellet : {superPellet.Position} : {bestPac.Id} : {bestPac.Position}");
@@ -168,12 +180,19 @@ namespace JoinThePac.Agents
                 var path = BFS.GetPath(cell,
                                        _chosenCells[pac.Id],
                                        currentCell => IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                      || IsPacInCell(currentCell, _game.MyPlayer.Pacs));
+                                                      || IsPacInCell(currentCell, _game.MyPlayer.Pacs)
+                                                      || _moveCells.Contains(currentCell));
                 if (path != null)
                 {
-                    var nextCell = pac.SpeedTurnsLeft == 0 || path.Count < 2
-                                       ? path.First()
-                                       : path.Skip(1).First();
+                    var nextCell = path.First();
+                    _moveCells.Add(nextCell);
+
+                    if (pac.SpeedTurnsLeft > 0 && path.Count >= 2)
+                    {
+                        nextCell = path.Skip(1).First();
+                        _moveCells.Add(nextCell);
+                    }
+
                     Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
                     return new MoveAction(nextCell.Position);
                 }
@@ -197,6 +216,7 @@ namespace JoinThePac.Agents
             {
                 Io.Debug($"{pac.Id} Random Uneaten pellet {closestCell.Position}");
                 _chosenCells[pac.Id] = closestCell;
+                _moveCells.Add(closestCell);
                 return new MoveAction(closestCell.Position);
             }
 
@@ -210,7 +230,8 @@ namespace JoinThePac.Agents
                                                      && currentCell.HasPellet
                                                      && !_chosenCells.ContainsValue(currentCell)
                                                      && !IsPacInCell(currentCell, _game.OpponentPlayer.Pacs)
-                                                     && !IsPacInCell(currentCell, _game.MyPlayer.Pacs));
+                                                     && !IsPacInCell(currentCell, _game.MyPlayer.Pacs)
+                                                     && !_moveCells.Contains(currentCell));
         }
 
         private MoveAction MoveToNeighbourPellet(Pac pac, Cell cell)
@@ -221,7 +242,8 @@ namespace JoinThePac.Agents
                 if (neighbour.HasPellet
                     && !_chosenCells.ContainsValue(neighbour)
                     && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
+                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                    && !_moveCells.Contains(neighbour))
                 {
                     cellsToConsider.Add(neighbour);
                 }
@@ -229,30 +251,34 @@ namespace JoinThePac.Agents
 
             if (cellsToConsider.Any())
             {
-                if (pac.SpeedTurnsLeft > 0)
+                foreach (var cellConsider in cellsToConsider)
                 {
-                    foreach (var cellConsider in cellsToConsider)
+                    foreach (var (_, neighbour) in cellConsider.Neighbours)
                     {
-                        foreach (var (_, neighbour) in cellConsider.Neighbours)
+                        if (neighbour.HasPellet
+                            && !_chosenCells.ContainsValue(neighbour)
+                            && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
+                            && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                            && !_moveCells.Contains(neighbour))
                         {
-                            if (neighbour.HasPellet
-                                && !_chosenCells.ContainsValue(neighbour)
-                                && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                                && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
+                            if (pac.SpeedTurnsLeft > 0)
                             {
                                 Io.Debug($"{pac.Id} Neighbour Pellet : {cellConsider.Position} :{neighbour.Position}");
                                 _chosenCells[pac.Id] = neighbour;
+                                _moveCells.Add(cellConsider);
+                                _moveCells.Add(neighbour);
                                 return new MoveAction(neighbour.Position);
+                            }
+                            else
+                            {
+                                var nextCell = cellsToConsider.First();
+                                Io.Debug($"{pac.Id} Neighbour Pellet : {nextCell.Position}");
+                                _chosenCells[pac.Id] = nextCell;
+                                _moveCells.Add(neighbour);
+                                return new MoveAction(nextCell.Position);
                             }
                         }
                     }
-                }
-                else
-                {
-                    var nextCell = cellsToConsider.First();
-                    Io.Debug($"{pac.Id} Neighbour Pellet : {nextCell.Position}");
-                    _chosenCells[pac.Id] = nextCell;
-                    return new MoveAction(nextCell.Position);
                 }
             }
 
@@ -265,10 +291,12 @@ namespace JoinThePac.Agents
             {
                 if (!_chosenCells.ContainsValue(neighbour)
                     && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
-                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
+                    && !IsPacInCell(neighbour, _game.MyPlayer.Pacs)
+                    && !_moveCells.Contains(neighbour))
                 {
                     Io.Debug($"{pac.Id} Neighbour {neighbour.Position}");
                     _chosenCells[pac.Id] = neighbour;
+                    _moveCells.Add(neighbour);
                     return new MoveAction(neighbour.Position);
                 }
             }
