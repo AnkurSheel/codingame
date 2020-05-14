@@ -148,7 +148,7 @@ namespace JoinThePac.Agents
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             MoveAction action = null;
-            if (pac.IsInSamePosition())
+            if (pac.IsInSamePosition() && pac.SpeedTurnsLeft != 5)
             {
                 Io.Debug($"{pac.Id} Same position {pac.Position}");
                 action = GetMoveIfInSamePosition(pac, cell);
