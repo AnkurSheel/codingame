@@ -138,7 +138,6 @@ namespace JoinThePac.Agents
                         _actions[bestPac.Id] = new MoveAction(cell.Position);
 
                         Io.Debug($"Super Pellet : {superPellet.Position} : {bestPac.Id} : {bestPac.Position}");
-
                     }
                 }
             }
@@ -200,6 +199,7 @@ namespace JoinThePac.Agents
                 _chosenCells[pac.Id] = closestCell;
                 return new MoveAction(closestCell.Position);
             }
+
             return null;
         }
 
@@ -215,6 +215,7 @@ namespace JoinThePac.Agents
 
         private MoveAction MoveToNeighbourPellet(Pac pac, Cell cell)
         {
+            var cellsToConsider = new List<Cell>();
             foreach (var (_, neighbour) in cell.Neighbours)
             {
                 if (neighbour.HasPellet
@@ -222,9 +223,36 @@ namespace JoinThePac.Agents
                     && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
                     && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
                 {
-                    Io.Debug($"{pac.Id} Neighbour Pellet {neighbour.Position}");
-                    _chosenCells[pac.Id] = neighbour;
-                    return new MoveAction(neighbour.Position);
+                    cellsToConsider.Add(neighbour);
+                }
+            }
+
+            if (cellsToConsider.Any())
+            {
+                if (pac.SpeedTurnsLeft > 0)
+                {
+                    foreach (var cellConsider in cellsToConsider)
+                    {
+                        foreach (var (_, neighbour) in cellConsider.Neighbours)
+                        {
+                            if (neighbour.HasPellet
+                                && !_chosenCells.ContainsValue(neighbour)
+                                && !IsPacInCell(neighbour, _game.OpponentPlayer.Pacs)
+                                && !IsPacInCell(neighbour, _game.MyPlayer.Pacs))
+                            {
+                                Io.Debug($"{pac.Id} Neighbour Pellet : {cellConsider.Position} :{neighbour.Position}");
+                                _chosenCells[pac.Id] = neighbour;
+                                return new MoveAction(neighbour.Position);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var nextCell = cellsToConsider.First();
+                    Io.Debug($"{pac.Id} Neighbour Pellet : {nextCell.Position}");
+                    _chosenCells[pac.Id] = nextCell;
+                    return new MoveAction(nextCell.Position);
                 }
             }
 
