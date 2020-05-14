@@ -17,7 +17,7 @@ namespace JoinThePac.Services
 
         public static void Debug(string output)
         {
-            if (Constants.IsDebugOn)
+            if (Constants.IsDebugOn || Constants.IsForInput)
             {
                 Console.Error.WriteLine(output);
             }
