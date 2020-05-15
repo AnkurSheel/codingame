@@ -156,7 +156,7 @@ namespace JoinThePac.Agents
                 return action;
             }
 
-            if (_chosenCells.ContainsKey(pac.Id))
+            if (_chosenCells.ContainsKey(pac.Id) && _chosenCells[pac.Id].HasPellet)
             {
                 var path = BFS.GetPath(cell, _chosenCells[pac.Id], GetObstacleCondition(pac, cell));
                 if (path != null)
@@ -273,7 +273,7 @@ namespace JoinThePac.Agents
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
             var closestCells = BFS.GetClosestCells(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac, cell), 20);
-            return closestCells.OrderByDescending(c => c.VisibleCells.Count).FirstOrDefault();
+            return closestCells.OrderByDescending(c => c.VisibleCells.Count()).FirstOrDefault();
         }
 
         private Func<Cell, bool> GetClosestCellCondition(Pac pac)
