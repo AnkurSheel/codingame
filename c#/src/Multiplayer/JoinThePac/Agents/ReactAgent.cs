@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -69,12 +70,7 @@ namespace JoinThePac.Agents
                     }
 
                     var pacCell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-                    var path = BFS.GetPath(pacCell,
-                                           superPellet,
-                                           currentCell => !currentCell.Equals(pacCell)
-                                                          && (GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
-                                                              || IsOpponentInCell(pac, currentCell)
-                                                              || _moveCells.Contains(currentCell)));
+                    var path = BFS.GetPath(pacCell, superPellet, GetObstacleCondition(pac, pacCell));
                     if (path != null)
                     {
                         if (bestPath == null || path.Count < bestPath.Count)
@@ -162,11 +158,7 @@ namespace JoinThePac.Agents
 
             if (_chosenCells.ContainsKey(pac.Id))
             {
-                var path = BFS.GetPath(cell,
-                                       _chosenCells[pac.Id],
-                                       currentCell => IsOpponentInCell(pac, currentCell)
-                                                      || GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
-                                                      || _moveCells.Contains(currentCell));
+                var path = BFS.GetPath(cell, _chosenCells[pac.Id], GetObstacleCondition(pac, cell));
                 if (path != null)
                 {
                     var nextCell = path.First();
@@ -280,17 +272,24 @@ namespace JoinThePac.Agents
         private Cell GetClosestCell(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-            return BFS.GetClosestCell(cell,
-                                      currentCell => currentCell.Type == CellType.Floor
-                                                     && currentCell.HasPellet
-                                                     && !_chosenCells.ContainsValue(currentCell)
-                                                     && GetPacInCell(currentCell, _game.MyPlayer.Pacs) == null
-                                                     && !IsOpponentInCell(pac, currentCell)
-                                                     && !_moveCells.Contains(currentCell),
-                                      currentCell => !currentCell.Equals(cell)
-                                                     && (GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
-                                                         || IsOpponentInCell(pac, currentCell)
-                                                         || _moveCells.Contains(currentCell)));
+            return BFS.GetClosestCell(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac, cell));
+        }
+
+        private Func<Cell, bool> GetClosestCellCondition(Pac pac)
+        {
+            return currentCell => currentCell.Type == CellType.Floor
+                                  && currentCell.HasPellet
+                                  && !_chosenCells.ContainsValue(currentCell)
+                                  && GetPacInCell(currentCell, _game.MyPlayer.Pacs) == null
+                                  && !IsOpponentInCell(pac, currentCell)
+                                  && !_moveCells.Contains(currentCell);
+        }
+
+        private Func<Cell, bool> GetObstacleCondition(Pac pac, Cell cell)
+        {
+            return currentCell => GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
+                                  || IsOpponentInCell(pac, currentCell)
+                                  || _moveCells.Contains(currentCell);
         }
 
         private Pac GetPacInCell(Cell mapCell, Dictionary<int, Pac> pacs)
@@ -319,7 +318,7 @@ namespace JoinThePac.Agents
                 open.RemoveAt(0);
 
                 var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
-                if (opponentPac != null && opponentPac.IsAlive)
+                if (opponentPac != null)
                 {
                     if (!pac.CanEat(opponentPac.Type))
                     {
