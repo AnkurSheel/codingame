@@ -69,8 +69,8 @@ namespace JoinThePac.Agents
                     }
 
                     var pacCell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-                    var path = BFS.GetPath(superPellet,
-                                           pacCell,
+                    var path = BFS.GetPath(pacCell,
+                                           superPellet,
                                            currentCell => !currentCell.Equals(pacCell)
                                                           && (GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
                                                               || IsOpponentInCell(pac, currentCell)
@@ -95,14 +95,11 @@ namespace JoinThePac.Agents
                     }
                     else
                     {
-                        bestPath.Reverse();
-                        var cell = bestPath.Count < 2
-                                       ? bestPath.First()
-                                       : bestPath.Skip(1).First();
+                        var cell = bestPath.First();
                         _moveCells.Add(cell);
-                        if (bestPac.SpeedTurnsLeft > 0 && bestPath.Count >= 3)
+                        if (bestPac.SpeedTurnsLeft > 0 && bestPath.Count >= 2)
                         {
-                            cell = bestPath.Skip(2).First();
+                            cell = bestPath.Skip(1).First();
                             _moveCells.Add(cell);
                         }
 
@@ -311,6 +308,7 @@ namespace JoinThePac.Agents
             var seen = new HashSet<Cell> { currentCell };
 
             var count = 0;
+            var maxCount = 2;
             while (open.Any())
             {
                 var tempCell = open.First();
@@ -325,7 +323,7 @@ namespace JoinThePac.Agents
                     }
                 }
 
-                if (count < 2)
+                if (count < maxCount)
                 {
                     foreach (var (_, neighbour) in currentCell.Neighbours)
                     {

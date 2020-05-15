@@ -36,6 +36,11 @@ namespace JoinThePac.Services
 
         public static List<Cell> GetPath(Cell from, Cell to, Func<Cell, bool> obstacleCondition)
         {
+            if (obstacleCondition(to))
+            {
+                return null;
+            }
+
             var fromCell = new BfsCell(null, from);
             var open = new List<BfsCell> { fromCell };
             var seen = new HashSet<Cell> { from };
