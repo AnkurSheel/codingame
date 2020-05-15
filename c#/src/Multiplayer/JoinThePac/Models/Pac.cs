@@ -34,7 +34,7 @@
         {
             _previousPosition = new Coordinate(Position);
             Position.Update(x, y);
-            IsAlive = true;
+            IsAlive = type != PacType.Unknown;
             Type = type;
             SpeedTurnsLeft = speedTurnsLeft;
             AbilityCooldown = abilityCooldown;

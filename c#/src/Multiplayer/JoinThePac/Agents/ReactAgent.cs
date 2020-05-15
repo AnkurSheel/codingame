@@ -293,7 +293,7 @@ namespace JoinThePac.Agents
         {
             foreach (var (_, pac) in pacs)
             {
-                if (pac.Position.IsSame(mapCell.Position))
+                if (pac.IsAlive && pac.Position.IsSame(mapCell.Position))
                 {
                     return pac;
                 }
@@ -315,7 +315,7 @@ namespace JoinThePac.Agents
                 open.RemoveAt(0);
 
                 var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
-                if (opponentPac != null)
+                if (opponentPac != null && opponentPac.IsAlive)
                 {
                     if (!pac.CanEat(opponentPac.Type))
                     {
