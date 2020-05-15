@@ -8,7 +8,7 @@ namespace JoinThePac.Services
 {
     public static class BFS
     {
-        public static Cell GetClosestCell(Cell from, Func<Cell, bool> condition)
+        public static Cell GetClosestCell(Cell from, Func<Cell, bool> condition, Func<Cell, bool> obstacleCondition)
         {
             var open = new List<Cell> { from };
             var seen = new HashSet<Cell> { from };
@@ -24,7 +24,7 @@ namespace JoinThePac.Services
 
                 foreach (var (_, neighbour) in currentCell.Neighbours)
                 {
-                    if (seen.Add(neighbour))
+                    if (seen.Add(neighbour) && !obstacleCondition(neighbour))
                     {
                         open.Add(neighbour);
                     }

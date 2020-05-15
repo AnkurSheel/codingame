@@ -286,7 +286,11 @@ namespace JoinThePac.Agents
                                                      && !_chosenCells.ContainsValue(currentCell)
                                                      && GetPacInCell(currentCell, _game.MyPlayer.Pacs) == null
                                                      && !IsOpponentInCell(pac, currentCell)
-                                                     && !_moveCells.Contains(currentCell));
+                                                     && !_moveCells.Contains(currentCell),
+                                      currentCell => !currentCell.Equals(cell)
+                                                     && (GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
+                                                         || IsOpponentInCell(pac, currentCell)
+                                                         || _moveCells.Contains(currentCell)));
         }
 
         private Pac GetPacInCell(Cell mapCell, Dictionary<int, Pac> pacs)
