@@ -8,18 +8,20 @@ namespace JoinThePac.Services
 {
     public static class BFS
     {
-        public static Cell GetClosestCell(Cell from, Func<Cell, bool> condition, Func<Cell, bool> obstacleCondition)
+        public static List<Cell> GetClosestCells(Cell from, Func<Cell, bool> condition, Func<Cell, bool> obstacleCondition, int maxLength)
         {
             var open = new List<Cell> { from };
             var seen = new HashSet<Cell> { from };
-            while (open.Any())
+            var cells = new List<Cell>();
+
+            while (open.Any() && cells.Count < maxLength)
             {
                 var currentCell = open.First();
                 open.RemoveAt(0);
 
                 if (condition(currentCell))
                 {
-                    return currentCell;
+                    cells.Add(currentCell);
                 }
 
                 foreach (var (_, neighbour) in currentCell.Neighbours)
@@ -31,7 +33,7 @@ namespace JoinThePac.Services
                 }
             }
 
-            return null;
+            return cells;
         }
 
         public static List<Cell> GetPath(Cell from, Cell to, Func<Cell, bool> obstacleCondition)

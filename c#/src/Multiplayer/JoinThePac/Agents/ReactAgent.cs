@@ -272,7 +272,8 @@ namespace JoinThePac.Agents
         private Cell GetClosestCell(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-            return BFS.GetClosestCell(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac, cell));
+            var closestCells = BFS.GetClosestCells(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac, cell), 20);
+            return closestCells.OrderByDescending(c => c.VisibleCells.Count).FirstOrDefault();
         }
 
         private Func<Cell, bool> GetClosestCellCondition(Pac pac)
