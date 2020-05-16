@@ -60,33 +60,41 @@ namespace JoinThePac.Agents
 
             foreach (var path in pathsToSuperPellets)
             {
-                if (_actions.ContainsKey(path.Pac.Id))
+                if (_actions.ContainsKey(path.Pac.Id) || _chosenCells.ContainsValue(path.Cell))
                 {
                     continue;
                 }
 
-                _chosenCells[path.Pac.Id] = path.Cell;
-
                 if (path.Path.Count == 1)
                 {
                     var cell = GetNextCellIfSpeed(path.Pac, path.Cell);
-
                     _actions[path.Pac.Id] = new MoveAction(cell.Position);
+                    Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
                 }
                 else
                 {
                     var cell = path.Path.First();
-                    _moveCells.Add(cell);
-                    if (path.Pac.SpeedTurnsLeft > 0 && path.Path.Count >= 2)
+                    if (ShouldAvoidCell(path.Pac, cell))
                     {
-                        cell = path.Path.Skip(1).First();
-                        _moveCells.Add(cell);
+                        continue;
                     }
+                    if (path.Pac.SpeedTurnsLeft > 0)
+                    {
+                        var nextCell = path.Path.Skip(1).First();
+                        if (ShouldAvoidCell(path.Pac, cell))
+                        {
+                            continue;
+                        }
+                        _moveCells.Add(nextCell);
+                    }
+                    _moveCells.Add(cell);
 
                     _actions[path.Pac.Id] = new MoveAction(cell.Position);
 
                     Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
                 }
+                _chosenCells[path.Pac.Id]= path.Cell;
+
             }
         }
 
