@@ -56,6 +56,7 @@ namespace JoinThePac
                 var typeId = inputs[4]; // unused in wood leagues
                 var speedTurnsLeft = int.Parse(inputs[5]); // unused in wood leagues
                 var abilityCooldown = int.Parse(inputs[6]); // unused in wood leagues
+                Map.SetCellValue(x,y,0);
                 if (mine)
                 {
                     MyPlayer.UpdatePac(pacId, x, y, PacTypeExtensions.FromString(typeId), speedTurnsLeft, abilityCooldown);
