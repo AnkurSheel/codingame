@@ -46,6 +46,7 @@ namespace JoinThePac.Agents
         {
             AddSpeedAction();
         }
+
         private void AddSpeedAction()
         {
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
@@ -59,7 +60,7 @@ namespace JoinThePac.Agents
 
         private void AddSuperPelletActions()
         {
-            var pathsToSuperPellets = GetAllPathBetweenPacsAndSuperPellets();
+            var pathsToSuperPellets = GetAllPathBetweenPacsAndCells(_game.Map.SuperPellets);
 
             foreach (var path in pathsToSuperPellets)
             {
@@ -73,42 +74,15 @@ namespace JoinThePac.Agents
                     continue;
                 }
 
-                if (path.Path.Count == 1)
+                var action = GetNextCellFromPath(path);
+                if (action == null)
                 {
-                    var cell = GetNextCellIfSpeed(path.Pac, path.Cell);
-                    _actions[path.Pac.Id] = new MoveAction(cell.Position);
-                    Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
-                }
-                else
-                {
-                    var cell = path.Path.First();
-                    if (ShouldAvoidCell(path.Pac, cell))
-                    {
-                        continue;
-                    }
-
-                    if (path.Pac.SpeedTurnsLeft > 0)
-                    {
-                        var nextCell = path.Path.Skip(1).First();
-                        if (ShouldAvoidCell(path.Pac, cell))
-                        {
-                            continue;
-                        }
-
-                        _moveCells.Add(nextCell);
-                        _actions[path.Pac.Id] = new MoveAction(nextCell.Position);
-                    }
-                    else
-                    {
-                        _actions[path.Pac.Id] = new MoveAction(cell.Position);
-                    }
-
-                    _moveCells.Add(cell);
-
-                    Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
+                    continue;
                 }
 
-                _chosenCells[path.Pac.Id] = path.Cell;
+                Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Next cell position {action.Position} : Path Count {path.Path.Count}");
+
+                _actions[path.Pac.Id] = action;
             }
         }
 
@@ -313,13 +287,13 @@ namespace JoinThePac.Agents
             return cell;
         }
 
-        private List<PacPath> GetAllPathBetweenPacsAndSuperPellets()
+        private List<PacPath> GetAllPathBetweenPacsAndCells(IReadOnlyCollection<Cell> cells)
         {
             var paths = new List<PacPath>();
 
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                foreach (var superPellet in _game.Map.SuperPellets)
+                foreach (var cell in cells)
                 {
                     if (!pac.IsAlive || _actions.ContainsKey(pac.Id))
                     {
@@ -327,15 +301,53 @@ namespace JoinThePac.Agents
                     }
 
                     var pacCell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-                    var path = BFS.GetPath(pacCell, superPellet, GetObstacleCondition(pac));
+                    var path = BFS.GetPath(pacCell, cell, GetObstacleCondition(pac));
                     if (path != null)
                     {
-                        paths.Add(new PacPath(pac, superPellet, path));
+                        paths.Add(new PacPath(pac, cell, path));
                     }
                 }
             }
 
             return paths.OrderBy(a => a.Path.Count).ToList();
+        }
+
+        private MoveAction GetNextCellFromPath(PacPath path)
+        {
+            if (path.Path.Count == 1)
+            {
+                var cell = GetNextCellIfSpeed(path.Pac, path.Cell);
+                _chosenCells[path.Pac.Id] = path.Cell;
+                return new MoveAction(cell.Position);
+            }
+            else
+            {
+                var cell = path.Path.First();
+                if (ShouldAvoidCell(path.Pac, cell))
+                {
+                    return null;
+                }
+
+                _chosenCells[path.Pac.Id] = path.Cell;
+                if (path.Pac.SpeedTurnsLeft > 0)
+                {
+                    var nextCell = path.Path.Skip(1).First();
+                    if (ShouldAvoidCell(path.Pac, cell))
+                    {
+                        return null;
+                    }
+
+                    _moveCells.Add(cell);
+                    _moveCells.Add(nextCell);
+                    return new MoveAction(nextCell.Position);
+                }
+                else
+                {
+                    _moveCells.Add(cell);
+
+                    return new MoveAction(cell.Position);
+                }
+            }
         }
 
         private void RemoveInvalidChosenCells(Pac pac)
