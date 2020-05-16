@@ -60,7 +60,12 @@ namespace JoinThePac.Agents
 
             foreach (var path in pathsToSuperPellets)
             {
-                if (_actions.ContainsKey(path.Pac.Id) || _chosenCells.ContainsValue(path.Cell))
+                if (_actions.ContainsKey(path.Pac.Id))
+                {
+                    continue;
+                }
+
+                if (IsCellChosenBySomeoneElse(path.Pac.Id, path.Cell))
                 {
                     continue;
                 }
@@ -78,6 +83,7 @@ namespace JoinThePac.Agents
                     {
                         continue;
                     }
+
                     if (path.Pac.SpeedTurnsLeft > 0)
                     {
                         var nextCell = path.Path.Skip(1).First();
@@ -85,16 +91,23 @@ namespace JoinThePac.Agents
                         {
                             continue;
                         }
+
                         _moveCells.Add(nextCell);
+                        _actions[path.Pac.Id] = new MoveAction(nextCell.Position);
                     }
+                    else
+                    {
+                        _actions[path.Pac.Id] = new MoveAction(cell.Position);
+                    }
+
                     _moveCells.Add(cell);
 
-                    _actions[path.Pac.Id] = new MoveAction(cell.Position);
+                    
 
                     Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
                 }
-                _chosenCells[path.Pac.Id]= path.Cell;
 
+                _chosenCells[path.Pac.Id] = path.Cell;
             }
         }
 
@@ -388,6 +401,19 @@ namespace JoinThePac.Agents
                 }
 
                 count++;
+            }
+
+            return false;
+        }
+
+        private bool IsCellChosenBySomeoneElse(int pacId, Cell cell)
+        {
+            foreach (var (id, chosenCell) in _chosenCells)
+            {
+                if (cell.Equals(chosenCell) && id != pacId)
+                {
+                    return true;
+                }
             }
 
             return false;
