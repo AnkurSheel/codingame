@@ -266,8 +266,24 @@ namespace JoinThePac.Agents
                 var closestCell = closestCells.OrderByDescending(c => c.VisibleCells.Count()).First();
                 Io.Debug($"Pac Id {pac.Id} : Random Uneaten pellet Position: {closestCell.Position}");
                 _chosenCells[pac.Id] = closestCell;
-                _moveCells.Add(closestCell);
-                return new MoveAction(closestCell.Position);
+
+                var path = BFS.GetPath(cell, closestCell, GetObstacleCondition(pac));
+                if (path != null)
+                {
+                    var nextCell = path.First();
+                    _moveCells.Add(nextCell);
+
+                    if (pac.SpeedTurnsLeft > 0 && path.Count >= 2)
+                    {
+                        nextCell = path.Skip(1).First();
+                        _moveCells.Add(nextCell);
+                    }
+
+                    Io.Debug($"Pac Id: {pac.Id} : Random Uneaten pellet Position {_chosenCells[pac.Id].Position} : Next cell position {nextCell.Position}");
+                    {
+                        return new MoveAction(nextCell.Position);
+                    }
+                }
             }
 
             return null;
