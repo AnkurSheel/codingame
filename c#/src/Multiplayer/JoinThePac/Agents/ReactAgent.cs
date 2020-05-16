@@ -90,8 +90,29 @@ namespace JoinThePac.Agents
 
                 if (path.Path.Count == 1)
                 {
-                    _moveCells.Add(path.Cell);
-                    _actions[path.Pac.Id] = new MoveAction(path.Cell.Position);
+                    var cell = path.Cell;
+                    _moveCells.Add(cell);
+                    if (path.Pac.SpeedTurnsLeft > 0)
+                    {
+                        foreach (var (_, neighbour) in cell.Neighbours)
+                        {
+                            if (!_chosenCells.ContainsValue(neighbour)
+                                && !IsOpponentInCell(path.Pac, neighbour)
+                                && GetPacInCell(neighbour, _game.MyPlayer.Pacs) == null
+                                && !_moveCells.Contains(neighbour))
+                            {
+                                cell = neighbour;
+                                if (!cell.HasPellet && neighbour.HasPellet)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+                        _moveCells.Add(cell);
+                    }
+
+                    _actions[path.Pac.Id] = new MoveAction(cell.Position);
                 }
                 else
                 {
@@ -173,7 +194,7 @@ namespace JoinThePac.Agents
                         _moveCells.Add(nextCell);
                     }
 
-                    Io.Debug($"{pac.Id} Chosen Cell {_chosenCells[pac.Id].Position} {nextCell.Position}");
+                    Io.Debug($"Chosen Cell Position {_chosenCells[pac.Id].Position} : Pac Id: {pac.Id} : Next cell position {nextCell.Position}");
                     return new MoveAction(nextCell.Position);
                 }
             }
