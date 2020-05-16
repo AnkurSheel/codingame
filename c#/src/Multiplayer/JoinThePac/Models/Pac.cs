@@ -1,5 +1,8 @@
-﻿namespace JoinThePac.Models
+﻿using System.Diagnostics;
+
+namespace JoinThePac.Models
 {
+    [DebuggerDisplay("Id = {Id} Position = {Position} type={Type} isAlive={IsAlive} ")]
     public class Pac
     {
         public int Id { get; }

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace JoinThePac.Models
 {
-    [DebuggerDisplay("Position = {Position} type={Type}")]
+    [DebuggerDisplay("Position = {Position} type={Type} value ={PelletValue}")]
     public class Cell
     {
         public Cell(int x, int y, CellType cellType)
