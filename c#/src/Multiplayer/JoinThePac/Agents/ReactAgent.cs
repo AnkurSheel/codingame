@@ -35,6 +35,7 @@ namespace JoinThePac.Agents
             _moveCells.Clear();
 
             AddAbilityActions();
+            AddSuperPelletActions();
 
             AddMoveActions();
 
@@ -45,12 +46,11 @@ namespace JoinThePac.Agents
         {
             AddSpeedAction();
         }
-
         private void AddSpeedAction()
         {
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                if (!_actions.ContainsKey(pac.Id) && pac.IsAlive && pac.AbilityCooldown == 0)
+                if (pac.AbilityCooldown == 0)
                 {
                     _actions[pac.Id] = new SpeedAction();
                 }
@@ -114,8 +114,6 @@ namespace JoinThePac.Agents
 
         private void AddMoveActions()
         {
-            AddSuperPelletActions();
-
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
                 RemoveInvalidChosenCells(pac);
@@ -341,7 +339,7 @@ namespace JoinThePac.Agents
         private bool ShouldAvoidCell(Pac pac, Cell cell)
         {
             return _chosenCells.ContainsValue(cell)
-                   || IsOpponentInCell(cell, opponentPac => pac.CanBeEaten(opponentPac.Type))
+                   || IsOpponentInCell(pac, cell)
                    || GetPacInCell(cell, _game.MyPlayer.Pacs) != null
                    || _moveCells.Contains(cell);
         }
@@ -354,7 +352,7 @@ namespace JoinThePac.Agents
         private Func<Cell, bool> GetObstacleCondition(Pac pac)
         {
             return currentCell => GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
-                                  || IsOpponentInCell(currentCell, opponentPac => pac.CanBeEaten(opponentPac.Type))
+                                  || IsOpponentInCell(pac, currentCell)
                                   || _moveCells.Contains(currentCell);
         }
 
@@ -371,7 +369,7 @@ namespace JoinThePac.Agents
             return null;
         }
 
-        private bool IsOpponentInCell(Cell currentCell, Func<Pac, bool> opponentPacCondition)
+        private bool IsOpponentInCell(Pac pac, Cell currentCell)
         {
             var open = new List<Cell> { currentCell };
             var seen = new HashSet<Cell> { currentCell };
@@ -386,7 +384,7 @@ namespace JoinThePac.Agents
                 var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
                 if (opponentPac != null)
                 {
-                    if (opponentPacCondition(opponentPac))
+                    if (pac.CanBeEaten(opponentPac.Type))
                     {
                         return true;
                     }
@@ -425,7 +423,7 @@ namespace JoinThePac.Agents
         private string BuildOutput()
         {
             var output = new StringBuilder();
-            foreach (var (pacId, action )in _actions)
+            foreach (var (pacId, action) in _actions)
             {
                 output.Append(action.GetAction(pacId));
                 output.Append(" | ");
