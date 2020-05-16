@@ -57,12 +57,11 @@ namespace JoinThePac.Agents
 
         private void AddSuperPelletActions()
         {
-            foreach (var superPellet in _game.Map.SuperPellets)
-            {
-                List<Cell> bestPath = null;
-                Pac bestPac = null;
+            var pathsToSuperPellets = new List<PacPath>();
 
-                foreach (var (_, pac )in _game.MyPlayer.Pacs)
+            foreach (var (_, pac) in _game.MyPlayer.Pacs)
+            {
+                foreach (var superPellet in _game.Map.SuperPellets)
                 {
                     if (!pac.IsAlive || _actions.ContainsKey(pac.Id))
                     {
@@ -73,36 +72,40 @@ namespace JoinThePac.Agents
                     var path = BFS.GetPath(pacCell, superPellet, GetObstacleCondition(pac, pacCell));
                     if (path != null)
                     {
-                        if (bestPath == null || path.Count < bestPath.Count)
-                        {
-                            bestPath = path;
-                            bestPac = pac;
-                        }
+                        pathsToSuperPellets.Add(new PacPath(pac, superPellet, path));
                     }
                 }
+            }
 
-                if (bestPac != null)
+            pathsToSuperPellets = pathsToSuperPellets.OrderBy(a => a.Path.Count).ToList();
+
+            foreach (var path in pathsToSuperPellets)
+            {
+                if (_actions.ContainsKey(path.Pac.Id))
                 {
-                    _chosenCells[bestPac.Id] = superPellet;
-                    if (bestPath.Count == 1)
+                    continue;
+                }
+
+                _chosenCells[path.Pac.Id] = path.Cell;
+
+                if (path.Path.Count == 1)
+                {
+                    _moveCells.Add(path.Cell);
+                    _actions[path.Pac.Id] = new MoveAction(path.Cell.Position);
+                }
+                else
+                {
+                    var cell = path.Path.First();
+                    _moveCells.Add(cell);
+                    if (path.Pac.SpeedTurnsLeft > 0 && path.Path.Count >= 2)
                     {
-                        _moveCells.Add(superPellet);
-                        _actions[bestPac.Id] = new MoveAction(superPellet.Position);
-                    }
-                    else
-                    {
-                        var cell = bestPath.First();
+                        cell = path.Path.Skip(1).First();
                         _moveCells.Add(cell);
-                        if (bestPac.SpeedTurnsLeft > 0 && bestPath.Count >= 2)
-                        {
-                            cell = bestPath.Skip(1).First();
-                            _moveCells.Add(cell);
-                        }
-
-                        _actions[bestPac.Id] = new MoveAction(cell.Position);
-
-                        Io.Debug($"Super Pellet : {superPellet.Position} : {bestPac.Id} : {bestPac.Position}");
                     }
+
+                    _actions[path.Pac.Id] = new MoveAction(cell.Position);
+
+                    Io.Debug($"Super Pellet Position {path.Cell.Position} : Pac Id {path.Pac.Id} : {path.Pac.Position} : Path Count {path.Path.Count}");
                 }
             }
         }
