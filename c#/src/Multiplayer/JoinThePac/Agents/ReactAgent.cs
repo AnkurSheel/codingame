@@ -383,7 +383,7 @@ namespace JoinThePac.Agents
                 var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
                 if (opponentPac != null)
                 {
-                    if (!pac.CanEat(opponentPac.Type))
+                    if (pac.CanBeEaten(opponentPac.Type))
                     {
                         return true;
                     }

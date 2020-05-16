@@ -48,16 +48,16 @@ namespace JoinThePac.Models
             IsAlive = false;
         }
 
-        public bool CanEat(PacType type)
+        public bool CanBeEaten(PacType type)
         {
             switch (Type)
             {
                 case PacType.Rock:
-                    return type == PacType.Scissors;
-                case PacType.Paper:
-                    return type == PacType.Rock;
-                case PacType.Scissors:
                     return type == PacType.Paper;
+                case PacType.Paper:
+                    return type == PacType.Scissors;
+                case PacType.Scissors:
+                    return type == PacType.Rock;
                 default:
                     return false;
             }
