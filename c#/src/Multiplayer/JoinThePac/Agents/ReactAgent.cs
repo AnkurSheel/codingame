@@ -34,20 +34,23 @@ namespace JoinThePac.Agents
             _actions.Clear();
             _moveCells.Clear();
 
-            AddSpeedAction();
-
-            AddSuperPelletActions();
+            AddAbilityActions();
 
             AddMoveActions();
 
             return BuildOutput();
         }
 
+        private void AddAbilityActions()
+        {
+            AddSpeedAction();
+        }
+
         private void AddSpeedAction()
         {
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
-                if (pac.AbilityCooldown == 0)
+                if (!_actions.ContainsKey(pac.Id) && pac.IsAlive && pac.AbilityCooldown == 0)
                 {
                     _actions[pac.Id] = new SpeedAction();
                 }
@@ -102,8 +105,6 @@ namespace JoinThePac.Agents
 
                     _moveCells.Add(cell);
 
-                    
-
                     Io.Debug($"Pac Id {path.Pac.Id} : Super Pellet Position {path.Cell.Position} : Pac position {path.Pac.Position} : Path Count {path.Path.Count}");
                 }
 
@@ -113,6 +114,8 @@ namespace JoinThePac.Agents
 
         private void AddMoveActions()
         {
+            AddSuperPelletActions();
+
             foreach (var (_, pac) in _game.MyPlayer.Pacs)
             {
                 RemoveInvalidChosenCells(pac);
@@ -160,7 +163,7 @@ namespace JoinThePac.Agents
 
         private MoveAction GetMoveActionInSamePosition(Pac pac, Cell cell)
         {
-            if (pac.IsInSamePosition() && pac.SpeedTurnsLeft != 5)
+            if (pac.IsInSamePosition() && pac.AbilityCooldown != 9)
             {
                 Io.Debug($"Pac Id {pac.Id} : Same position {pac.Position}");
                 var action = GetMoveIfInSamePosition(pac, cell);
@@ -177,7 +180,7 @@ namespace JoinThePac.Agents
         {
             if (_chosenCells.ContainsKey(pac.Id) && _chosenCells[pac.Id].HasPellet)
             {
-                var path = BFS.GetPath(cell, _chosenCells[pac.Id], GetObstacleCondition(pac, cell));
+                var path = BFS.GetPath(cell, _chosenCells[pac.Id], GetObstacleCondition(pac));
                 if (path != null)
                 {
                     var nextCell = path.First();
@@ -259,7 +262,7 @@ namespace JoinThePac.Agents
         private MoveAction MoveToRandomPellet(Pac pac)
         {
             var cell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-            var closestCells = BFS.GetClosestCells(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac, cell), 20);
+            var closestCells = BFS.GetClosestCells(cell, GetClosestCellCondition(pac), GetObstacleCondition(pac), 20);
             if (closestCells.Any())
             {
                 var closestCell = closestCells.OrderByDescending(c => c.VisibleCells.Count()).First();
@@ -310,7 +313,7 @@ namespace JoinThePac.Agents
                     }
 
                     var pacCell = _game.Map.Cells[pac.Position.Y, pac.Position.X];
-                    var path = BFS.GetPath(pacCell, superPellet, GetObstacleCondition(pac, pacCell));
+                    var path = BFS.GetPath(pacCell, superPellet, GetObstacleCondition(pac));
                     if (path != null)
                     {
                         paths.Add(new PacPath(pac, superPellet, path));
@@ -335,12 +338,12 @@ namespace JoinThePac.Agents
             }
         }
 
-        private bool ShouldAvoidCell(Pac pac, Cell neighbour)
+        private bool ShouldAvoidCell(Pac pac, Cell cell)
         {
-            return _chosenCells.ContainsValue(neighbour)
-                   || IsOpponentInCell(pac, neighbour)
-                   || GetPacInCell(neighbour, _game.MyPlayer.Pacs) != null
-                   || _moveCells.Contains(neighbour);
+            return _chosenCells.ContainsValue(cell)
+                   || IsOpponentInCell(cell, opponentPac => pac.CanBeEaten(opponentPac.Type))
+                   || GetPacInCell(cell, _game.MyPlayer.Pacs) != null
+                   || _moveCells.Contains(cell);
         }
 
         private Func<Cell, bool> GetClosestCellCondition(Pac pac)
@@ -348,10 +351,10 @@ namespace JoinThePac.Agents
             return currentCell => currentCell.Type == CellType.Floor && currentCell.HasPellet && !ShouldAvoidCell(pac, currentCell);
         }
 
-        private Func<Cell, bool> GetObstacleCondition(Pac pac, Cell cell)
+        private Func<Cell, bool> GetObstacleCondition(Pac pac)
         {
             return currentCell => GetPacInCell(currentCell, _game.MyPlayer.Pacs) != null
-                                  || IsOpponentInCell(pac, currentCell)
+                                  || IsOpponentInCell(currentCell, opponentPac => pac.CanBeEaten(opponentPac.Type))
                                   || _moveCells.Contains(currentCell);
         }
 
@@ -368,7 +371,7 @@ namespace JoinThePac.Agents
             return null;
         }
 
-        private bool IsOpponentInCell(Pac pac, Cell currentCell)
+        private bool IsOpponentInCell(Cell currentCell, Func<Pac, bool> opponentPacCondition)
         {
             var open = new List<Cell> { currentCell };
             var seen = new HashSet<Cell> { currentCell };
@@ -383,7 +386,7 @@ namespace JoinThePac.Agents
                 var opponentPac = GetPacInCell(tempCell, _game.OpponentPlayer.Pacs);
                 if (opponentPac != null)
                 {
-                    if (pac.CanBeEaten(opponentPac.Type))
+                    if (opponentPacCondition(opponentPac))
                     {
                         return true;
                     }
