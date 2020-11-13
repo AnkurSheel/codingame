@@ -2,7 +2,7 @@
 {
     internal class Player
     {
-        public Ingredient Inventory { get; set; }
+        public int[] Inventory { get; set; }
 
         public int Score { get; set; }
     }

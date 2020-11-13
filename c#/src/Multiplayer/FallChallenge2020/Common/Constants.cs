@@ -1,4 +1,4 @@
-﻿namespace FallChallenge2020
+﻿namespace FallChallenge2020.Common
 {
     public static class Constants
     {

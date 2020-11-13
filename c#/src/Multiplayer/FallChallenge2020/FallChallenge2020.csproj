@@ -15,4 +15,8 @@
     <None Remove="CombineFilesCsharp.exe - Shortcut.lnk" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>

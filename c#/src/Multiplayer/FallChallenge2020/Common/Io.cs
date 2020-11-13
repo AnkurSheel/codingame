@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace FallChallenge2020.Services
+namespace FallChallenge2020.Common
 {
     public static class Io
     {
