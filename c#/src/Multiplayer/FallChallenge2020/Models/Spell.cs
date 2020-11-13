@@ -23,7 +23,7 @@
 
         public override string ToString()
         {
-            return $"Spell {ActionId} {IngredientsCost} {Castable}";
+            return $"Spell {ActionId} {IngredientsCost[0]} {IngredientsCost[1]} {IngredientsCost[2]} {IngredientsCost[3]} {Castable}";
         }
     }
 }

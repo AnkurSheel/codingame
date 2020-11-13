@@ -10,6 +10,7 @@ namespace FallChallenge2020
     {
         private static void Main(string[] args)
         {
+            Io.Initialize();
             var agent = new SimpleAgent();
             // game loop
             while (true)

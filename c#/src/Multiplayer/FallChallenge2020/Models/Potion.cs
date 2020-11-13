@@ -12,7 +12,7 @@
         {
             ActionId = actionId;
             Price = price;
-            IngredientsCost = new[] { tier0IngredientCost, tier1IngredientCost, tier2IngredientCost, tier3IngredientCost };
+            IngredientsCost = new[] { -tier0IngredientCost, -tier1IngredientCost, -tier2IngredientCost, -tier3IngredientCost };
         }
 
         public int ActionId { get; }
@@ -23,7 +23,7 @@
 
         public override string ToString()
         {
-            return $"Potion {ActionId} {IngredientsCost} {Price}";
+            return $"Potion {ActionId} {IngredientsCost[0]} {IngredientsCost[1]} {IngredientsCost[2]} {IngredientsCost[3]} {Price}";
         }
     }
 }
