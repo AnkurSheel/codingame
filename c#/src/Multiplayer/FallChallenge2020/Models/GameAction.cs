@@ -22,6 +22,8 @@ namespace FallChallenge2020.Models
     {
         Unknown,
         Brew,
+        Cast,
+        OpponentCast
     }
 
     public static class ActionTypeExtension
@@ -31,6 +33,14 @@ namespace FallChallenge2020.Models
             if (actionType == "BREW")
             {
                 return ActionType.Brew;
+            }
+            if (actionType == "CAST")
+            {
+                return ActionType.Cast;
+            }
+            if (actionType == "OPPONENT_CAST")
+            {
+                return ActionType.OpponentCast;
             }
             throw new ArgumentOutOfRangeException($"Passed {actionType} for action type");
         }
