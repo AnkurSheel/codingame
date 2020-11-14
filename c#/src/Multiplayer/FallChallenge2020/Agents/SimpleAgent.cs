@@ -11,7 +11,8 @@ namespace FallChallenge2020.Agents
     {
         public IAction GetAction(Game game)
         {
-            var potion = game.Potions[0];
+            var bestPotion = GetBestPotion(game);
+
             var inventory = game.MyPlayer.Inventory;
 
             foreach (var spell in game.Spells)
@@ -19,7 +20,7 @@ namespace FallChallenge2020.Agents
                 Io.Debug(spell.ToString());
             }
 
-            Io.Debug($"Building potion {potion}");
+            Io.Debug($"Building {bestPotion}");
 
             var ingredientsCost = potion.IngredientsCost;
             var needsReset = false;
@@ -58,7 +59,31 @@ namespace FallChallenge2020.Agents
                 return new RestAction();
             }
 
-            return new BrewAction(potion.ActionId);
+            return new BrewAction(bestPotion.ActionId);
+        }
+
+        private Potion GetBestPotion(Game game)
+        {
+            Potion bestPotion = null;
+            var bestWeightedPrice = int.MinValue;
+            foreach (var potion in game.Potions)
+            {
+                var weightedPrice = 100
+                                    + potion.Price
+                                    - (1 * potion.IngredientsCost[0]
+                                       + 2 * potion.IngredientsCost[1]
+                                       + 3 * potion.IngredientsCost[2]
+                                       + 6 * potion.IngredientsCost[3]);
+                Io.Debug($"{weightedPrice} {potion}");
+                if (weightedPrice > bestWeightedPrice)
+                {
+                    bestPotion = potion;
+                    bestWeightedPrice = weightedPrice;
+                }
+            }
+
+            Io.Debug($"Best weighted price {bestWeightedPrice} {bestPotion}");
+            return bestPotion;
         }
 
         private IAction GetNextSpell(Spell spell, int[] inventory, List<Spell> spells)
