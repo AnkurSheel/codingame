@@ -8,16 +8,20 @@
             int tier1IngredientCost,
             int tier2IngredientCost,
             int tier3IngredientCost,
-            bool castable)
+            bool castable,
+            bool repeatable)
         {
             ActionId = actionId;
             Castable = castable;
+            Repeatable = repeatable;
             IngredientsCost = new[] { tier0IngredientCost, tier1IngredientCost, tier2IngredientCost, tier3IngredientCost };
         }
 
         public int ActionId { get; }
 
         public bool Castable { get; }
+
+        public bool Repeatable { get; }
 
         public int[] IngredientsCost { get; }
 

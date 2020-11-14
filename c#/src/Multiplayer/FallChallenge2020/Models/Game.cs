@@ -12,6 +12,8 @@ namespace FallChallenge2020.Models
 
         public List<Spell> OpponentSpells { get; private set; }
 
+        public List<Scroll> Scrolls { get; set; }
+
         public Player[] Players { get; private set; }
 
         public Player MyPlayer => Players[0];
@@ -21,6 +23,7 @@ namespace FallChallenge2020.Models
             Potions = new List<Potion>();
             Spells = new List<Spell>();
             OpponentSpells = new List<Spell>();
+            Scrolls = new List<Scroll>();
             ParseActions();
             Players = new[] { GetPlayer(), GetPlayer() };
         }
@@ -50,7 +53,8 @@ namespace FallChallenge2020.Models
                                          int.Parse(inputs[3]),
                                          int.Parse(inputs[4]),
                                          int.Parse(inputs[5]),
-                                         int.Parse(inputs[9]) != 0));
+                                         int.Parse(inputs[9]) != 0,
+                                         int.Parse(inputs[10]) != 0));
                 }
                 else if (actionType == ActionType.OpponentCast)
                 {
@@ -59,7 +63,18 @@ namespace FallChallenge2020.Models
                                                  int.Parse(inputs[3]),
                                                  int.Parse(inputs[4]),
                                                  int.Parse(inputs[5]),
-                                                 int.Parse(inputs[9]) != 0));
+                                                 int.Parse(inputs[9]) != 0,
+                                                 int.Parse(inputs[10]) != 0));
+                }
+                else if(actionType == ActionType.Learn)
+                {
+                    Scrolls.Add(new Scroll(int.Parse(inputs[0]),
+                                           int.Parse(inputs[2]),
+                                           int.Parse(inputs[3]),
+                                           int.Parse(inputs[4]),
+                                           int.Parse(inputs[5]),
+                                           int.Parse(inputs[7]),
+                                            int.Parse(inputs[10]) != 0));
                 }
             }
         }

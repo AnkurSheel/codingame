@@ -10,7 +10,9 @@ namespace FallChallenge2020.Models
 
         Cast,
 
-        OpponentCast
+        OpponentCast,
+
+        Learn
     }
 
     public static class ActionTypeExtension
@@ -30,6 +32,11 @@ namespace FallChallenge2020.Models
             if (actionType == "OPPONENT_CAST")
             {
                 return ActionType.OpponentCast;
+            }
+
+            if (actionType == "LEARN")
+            {
+                return ActionType.Learn;
             }
 
             throw new ArgumentOutOfRangeException($"Passed {actionType} for action type");
