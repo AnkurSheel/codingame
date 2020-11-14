@@ -12,7 +12,7 @@
         {
             ActionId = actionId;
             Price = price;
-            IngredientsCost = new[] { -tier0IngredientCost, -tier1IngredientCost, -tier2IngredientCost, -tier3IngredientCost };
+            IngredientsCost = new[] { tier0IngredientCost, tier1IngredientCost, tier2IngredientCost, tier3IngredientCost };
         }
 
         public int ActionId { get; }
