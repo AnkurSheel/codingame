@@ -8,7 +8,7 @@ namespace SpringChallenge2021.Agents
     {
         public IAction GetAction(Game game)
         {
-            var completeAction = game.PossibleActions.FirstOrDefault(x => x is CompleteAction);
+            var completeAction = GetBestCompleteAction(game);
             if (completeAction != null)
             {
                 return completeAction;
@@ -27,6 +27,29 @@ namespace SpringChallenge2021.Agents
             }
 
             return new WaitAction();
+        }
+
+        private static IAction? GetBestCompleteAction(Game game)
+        {
+            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3)
+            {
+                return null;
+            }
+
+            var completeActions = game.PossibleActions.OfType<CompleteAction>().ToList();
+            var bestCompleteAction = completeActions.FirstOrDefault();
+            var bestSoilQuality = SoilQuality.Unusable;
+            foreach (var completeAction in completeActions)
+            {
+                var cellSoilQuality = game.Board[completeAction.Index].SoilQuality;
+                if (bestSoilQuality < cellSoilQuality)
+                {
+                    bestSoilQuality = cellSoilQuality;
+                    bestCompleteAction = completeAction;
+                }
+            }
+
+            return bestCompleteAction;
         }
 
         private static IAction? GetBestGrowAction(Game game)

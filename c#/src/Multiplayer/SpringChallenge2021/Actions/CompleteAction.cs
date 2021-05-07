@@ -2,16 +2,16 @@
 {
     public class CompleteAction : IAction
     {
-        private readonly int _index;
+        public int Index { get; }
 
         public CompleteAction(int index)
         {
-            _index = index;
+            Index = index;
         }
 
         public string GetOutputAction()
         {
-            return $"COMPLETE {_index}";
+            return $"COMPLETE {Index}";
         }
     }
 }
