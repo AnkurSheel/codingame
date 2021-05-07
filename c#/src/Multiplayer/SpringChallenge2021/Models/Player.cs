@@ -1,4 +1,5 @@
-﻿using SpringChallenge2021.Common.Services;
+﻿using System.Collections.Generic;
+using SpringChallenge2021.Common.Services;
 
 namespace SpringChallenge2021.Models
 {
@@ -7,6 +8,27 @@ namespace SpringChallenge2021.Models
         private int _sunPoints;
         private int _score;
         private bool _isWaiting;
+
+        public Dictionary<TreeSize, List<Tree>> Trees { get; }
+
+        public Player()
+        {
+            Trees = new Dictionary<TreeSize, List<Tree>>
+            {
+                {TreeSize.Seed, new List<Tree>()},
+                {TreeSize.Small, new List<Tree>()},
+                {TreeSize.Medium, new List<Tree>()},
+                {TreeSize.Large, new List<Tree>()},
+            };
+        }
+
+        public void ReInit()
+        {
+            foreach (var (_, treeList) in Trees)
+            {
+                treeList.Clear();
+            }
+        }
 
         public void Parse()
         {
@@ -21,6 +43,11 @@ namespace SpringChallenge2021.Models
             {
                 _isWaiting = inputs[2] != "0"; // whether your opponent is asleep until the next day
             }
+        }
+
+        public void AddTree(Tree tree)
+        {
+            Trees[tree.Size].Add(tree);
         }
     }
 }

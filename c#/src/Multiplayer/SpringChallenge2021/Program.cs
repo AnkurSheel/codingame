@@ -15,7 +15,7 @@ namespace SpringChallenge2021
             // game loop
             while (true)
             {
-                game.ReadGameState();
+                game.ReInit();
 
                 var action = agent.GetAction(game);
                 Io.WriteLine(action.GetOutputAction());

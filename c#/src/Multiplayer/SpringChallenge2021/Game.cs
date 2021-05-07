@@ -9,30 +9,42 @@ namespace SpringChallenge2021
     {
         private int _day;
         private int _nutrients;
-        private readonly List<Cell> _board;
-        private readonly List<Tree> _trees;
-        private readonly Player _myPlayer;
         private readonly Player _opponentPlayer;
 
         public List<IAction> PossibleActions { get; }
+        public Dictionary<int, Cell> Board { get; }
+
+        public Dictionary<int, Tree> Trees { get; }
+        public Player MyPlayer { get; }
 
         public Game()
         {
-            _board = new List<Cell>();
+            Board = new Dictionary<int, Cell>();
             PossibleActions = new List<IAction>();
-            _trees = new List<Tree>();
-            _myPlayer = new Player();
+            Trees = new Dictionary<int, Tree>();
+            MyPlayer = new Player();
             _opponentPlayer = new Player();
 
             GenerateBoard();
         }
 
-        public void ReadGameState()
+        public void ReInit()
+        {
+            Trees.Clear();
+            PossibleActions.Clear();
+
+            MyPlayer.ReInit();
+            _opponentPlayer.ReInit();
+
+            ReadGameState();
+        }
+
+        private void ReadGameState()
         {
             _day = int.Parse(Io.ReadLine()); // the game lasts 24 days: 0-23
             _nutrients = int.Parse(Io.ReadLine()); // the base score you gain from the next COMPLETE action
 
-            _myPlayer.Parse();
+            MyPlayer.Parse();
             _opponentPlayer.Parse();
 
             ReadTrees();
@@ -55,7 +67,7 @@ namespace SpringChallenge2021
                 var neigh5 = int.Parse(inputs[7]);
                 int[] neighs = {neigh0, neigh1, neigh2, neigh3, neigh4, neigh5};
                 var cell = new Cell(index, (SoilQuality) richness, neighs);
-                _board.Add(cell);
+                Board.Add(index, cell);
             }
         }
 
@@ -63,7 +75,6 @@ namespace SpringChallenge2021
         {
             Io.Debug("Reading Trees");
 
-            _trees.Clear();
             var numberOfTrees = int.Parse(Io.ReadLine()); // the current amount of trees
             for (var i = 0; i < numberOfTrees; i++)
             {
@@ -73,7 +84,15 @@ namespace SpringChallenge2021
                 var isMine = inputs[2] != "0"; // 1 if this is your tree
                 var isDormant = inputs[3] != "0"; // 1 if this tree is dormant
                 var tree = new Tree(cellIndex, (TreeSize) size, isMine, isDormant);
-                _trees.Add(tree);
+                Trees.Add(cellIndex, tree);
+                if (isMine)
+                {
+                    MyPlayer.AddTree(tree);
+                }
+                else
+                {
+                    _opponentPlayer.AddTree(tree);
+                }
             }
         }
 
@@ -81,7 +100,6 @@ namespace SpringChallenge2021
         {
             Io.Debug("Getting possible actions");
 
-            PossibleActions.Clear();
             var numberOfPossibleMoves = int.Parse(Io.ReadLine());
             for (var i = 0; i < numberOfPossibleMoves; i++)
             {
