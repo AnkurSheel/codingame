@@ -41,7 +41,8 @@ namespace SpringChallenge2021
 
         public IAction GetNextAction()
         {
-            return _possibleActions.First();
+            var completeAction = _possibleActions.FirstOrDefault(x => x is CompleteAction);
+            return completeAction ?? new WaitAction();
         }
 
         private void GenerateBoard()
