@@ -31,7 +31,7 @@ namespace SpringChallenge2021.Agents
 
         private static IAction? GetBestCompleteAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3)
+            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < 22)
             {
                 return null;
             }
