@@ -1,4 +1,4 @@
-﻿namespace SpringChallenge2021
+﻿namespace SpringChallenge2021.Models
 {
     internal class Cell
     {
