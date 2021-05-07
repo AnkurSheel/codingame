@@ -3,11 +3,11 @@
     public class Tree
     {
         private int _cellIndex;
-        private int _size;
+        private TreeSize _size;
         private bool _isMine;
         private bool _isDormant;
 
-        public Tree(int cellIndex, int size, bool isMine, bool isDormant)
+        public Tree(int cellIndex, TreeSize size, bool isMine, bool isDormant)
         {
             _cellIndex = cellIndex;
             _size = size;

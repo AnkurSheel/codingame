@@ -78,7 +78,7 @@ namespace SpringChallenge2021
                 var size = int.Parse(inputs[1]); // size of this tree: 0-3
                 var isMine = inputs[2] != "0"; // 1 if this is your tree
                 var isDormant = inputs[3] != "0"; // 1 if this tree is dormant
-                var tree = new Tree(cellIndex, size, isMine, isDormant);
+                var tree = new Tree(cellIndex, (TreeSize) size, isMine, isDormant);
                 _trees.Add(tree);
             }
         }
