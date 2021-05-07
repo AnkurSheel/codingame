@@ -2,7 +2,7 @@
 {
     public enum SoilQuality
     {
-        Unknown = 0,
+        Unusable = 0,
         Low = 1,
         Medium = 2,
         High = 3

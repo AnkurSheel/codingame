@@ -2,9 +2,9 @@
 {
     public enum TreeSize
     {
-        Unknown = 0,
+        Seed = 0,
         Small = 1,
         Medium = 2,
-        Lage = 3
+        Large = 3
     }
 }
