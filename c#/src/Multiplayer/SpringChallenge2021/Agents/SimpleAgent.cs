@@ -14,16 +14,19 @@ namespace SpringChallenge2021.Agents
                 return completeAction;
             }
 
-            var growAction = GetBestGrowAction(game);
-            if (growAction != null)
+            if (game.Day < Constants.DayCutOff + 1)
             {
-                return growAction;
-            }
+                var growAction = GetBestGrowAction(game);
+                if (growAction != null)
+                {
+                    return growAction;
+                }
 
-            var seedAction = GetBestSeedAction(game);
-            if (seedAction != null)
-            {
-                return seedAction;
+                var seedAction = GetBestSeedAction(game);
+                if (seedAction != null)
+                {
+                    return seedAction;
+                }
             }
 
             return new WaitAction();
@@ -31,7 +34,7 @@ namespace SpringChallenge2021.Agents
 
         private static IAction? GetBestCompleteAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < 22)
+            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < Constants.DayCutOff)
             {
                 return null;
             }

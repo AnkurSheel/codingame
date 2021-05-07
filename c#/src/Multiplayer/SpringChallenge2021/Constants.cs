@@ -2,6 +2,7 @@
 {
     public class Constants
     {
-        private const int MaxDays = 20;
+        public const int DayCutOff = 22;
+        public const int MaxDays = 24;
     }
 }
