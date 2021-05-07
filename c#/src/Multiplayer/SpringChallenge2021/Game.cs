@@ -1,25 +1,25 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using SpringChallenge2021.Actions;
 using SpringChallenge2021.Common.Services;
 using SpringChallenge2021.Models;
 
 namespace SpringChallenge2021
 {
-    internal class Game
+    public class Game
     {
         private int _day;
         private int _nutrients;
         private readonly List<Cell> _board;
-        private readonly List<IAction> _possibleActions;
         private readonly List<Tree> _trees;
         private readonly Player _myPlayer;
         private readonly Player _opponentPlayer;
 
+        public List<IAction> PossibleActions { get; }
+
         public Game()
         {
             _board = new List<Cell>();
-            _possibleActions = new List<IAction>();
+            PossibleActions = new List<IAction>();
             _trees = new List<Tree>();
             _myPlayer = new Player();
             _opponentPlayer = new Player();
@@ -37,23 +37,6 @@ namespace SpringChallenge2021
 
             ReadTrees();
             ReadPossibleActions();
-        }
-
-        public IAction GetNextAction()
-        {
-            var completeAction = _possibleActions.FirstOrDefault(x => x is CompleteAction);
-            if (completeAction != null)
-            {
-                return completeAction;
-            }
-
-            var growAction = _possibleActions.FirstOrDefault(x => x is GrowAction);
-            if (growAction != null)
-            {
-                return growAction;
-            }
-
-            return new WaitAction();
         }
 
         private void GenerateBoard()
@@ -98,12 +81,12 @@ namespace SpringChallenge2021
         {
             Io.Debug("Getting next action");
 
-            _possibleActions.Clear();
+            PossibleActions.Clear();
             var numberOfPossibleMoves = int.Parse(Io.ReadLine());
             for (var i = 0; i < numberOfPossibleMoves; i++)
             {
                 var possibleMove = Io.ReadLine();
-                _possibleActions.Add(Action.Parse(possibleMove));
+                PossibleActions.Add(Action.Parse(possibleMove));
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using SpringChallenge2021.Common.Services;
+﻿using SpringChallenge2021.Agents;
+using SpringChallenge2021.Common.Services;
 
 namespace SpringChallenge2021
 {
@@ -9,14 +10,14 @@ namespace SpringChallenge2021
             Io.Initialize();
 
             var game = new Game();
-
+            var agent = new SimpleAgent();
 
             // game loop
             while (true)
             {
                 game.ReadGameState();
 
-                var action = game.GetNextAction();
+                var action = agent.GetAction(game);
                 Io.WriteLine(action.GetOutputAction());
             }
         }
