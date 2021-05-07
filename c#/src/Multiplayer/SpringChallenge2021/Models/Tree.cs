@@ -1,6 +1,6 @@
 ﻿namespace SpringChallenge2021.Models
 {
-    internal class Tree
+    public class Tree
     {
         private int _cellIndex;
         private int _size;

@@ -3,13 +3,13 @@
     internal class Cell
     {
         private int _index;
-        private int _richness;
+        private SoilQuality _soilQuality;
         private int[] _neighbours;
 
-        public Cell(int index, int richness, int[] neighbours)
+        public Cell(int index, SoilQuality soilQuality, int[] neighbours)
         {
             _index = index;
-            _richness = richness;
+            _soilQuality = soilQuality;
             _neighbours = neighbours;
         }
     }

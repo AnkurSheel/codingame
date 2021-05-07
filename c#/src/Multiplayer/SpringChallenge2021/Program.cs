@@ -2,7 +2,7 @@
 
 namespace SpringChallenge2021
 {
-    internal class Player
+    internal class Program
     {
         private static void Main(string[] args)
         {
@@ -17,7 +17,7 @@ namespace SpringChallenge2021
                 game.ReadGameState();
 
                 var action = game.GetNextAction();
-                Io.WriteLine(action.ToString());
+                Io.WriteLine(action.GetOutputAction());
             }
         }
     }

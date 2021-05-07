@@ -1,25 +1,26 @@
-﻿namespace SpringChallenge2021
+﻿using SpringChallenge2021.Actions;
+
+namespace SpringChallenge2021
 {
     internal class Action
     {
-        public const string WAIT = "WAIT";
-        public const string SEED = "SEED";
-        public const string GROW = "GROW";
-        public const string COMPLETE = "COMPLETE";
+        private const string WAIT = "WAIT";
+        private const string SEED = "SEED";
+        private const string GROW = "GROW";
+        private const string COMPLETE = "COMPLETE";
 
-        public static Action Parse(string action)
+        public static IAction Parse(string action)
         {
             var parts = action.Split(" ");
             switch (parts[0])
             {
-                case WAIT:
-                    return new Action(WAIT);
-                case SEED:
-                    return new Action(SEED, int.Parse(parts[1]), int.Parse(parts[2]));
-                case GROW:
                 case COMPLETE:
+                    return new CompleteAction(int.Parse(parts[1]));
+                case WAIT:
+                case SEED:
+                case GROW:
                 default:
-                    return new Action(parts[0], int.Parse(parts[1]));
+                    return new WaitAction();
             }
         }
 
