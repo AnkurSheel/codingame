@@ -14,11 +14,12 @@ namespace SpringChallenge2021
             var parts = action.Split(" ");
             switch (parts[0])
             {
+                case GROW:
+                    return new GrowAction(int.Parse(parts[1]));
                 case COMPLETE:
                     return new CompleteAction(int.Parse(parts[1]));
                 case WAIT:
                 case SEED:
-                case GROW:
                 default:
                     return new WaitAction();
             }
