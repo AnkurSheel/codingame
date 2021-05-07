@@ -3,7 +3,7 @@ using SpringChallenge2021.Actions;
 
 namespace SpringChallenge2021.Agents
 {
-    public class SimpleAgent
+    public class SimpleAgentV1
     {
         public IAction GetAction(Game game)
         {
