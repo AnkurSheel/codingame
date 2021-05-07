@@ -10,7 +10,7 @@ using System;
 using System.IO;
 
 
- // 07/05/2021 10:59
+ // 07/05/2021 11:35
 
 
 namespace SpringChallenge2021
@@ -27,11 +27,12 @@ namespace SpringChallenge2021
             var parts = action.Split(" ");
             switch (parts[0])
             {
+                case GROW:
+                    return new GrowAction(int.Parse(parts[1]));
                 case COMPLETE:
                     return new CompleteAction(int.Parse(parts[1]));
                 case WAIT:
                 case SEED:
-                case GROW:
                 default:
                     return new WaitAction();
             }
@@ -113,7 +114,18 @@ namespace SpringChallenge2021
         public IAction GetNextAction()
         {
             var completeAction = _possibleActions.FirstOrDefault(x => x is CompleteAction);
-            return completeAction ?? new WaitAction();
+            if (completeAction != null)
+            {
+                return completeAction;
+            }
+
+            var growAction = _possibleActions.FirstOrDefault(x => x is GrowAction);
+            if (growAction != null)
+            {
+                return growAction;
+            }
+
+            return new WaitAction();
         }
 
         private void GenerateBoard()
@@ -149,12 +161,12 @@ namespace SpringChallenge2021
                 var size = int.Parse(inputs[1]); // size of this tree: 0-3
                 var isMine = inputs[2] != "0"; // 1 if this is your tree
                 var isDormant = inputs[3] != "0"; // 1 if this tree is dormant
-                var tree = new Tree(cellIndex, size, isMine, isDormant);
+                var tree = new Tree(cellIndex, (TreeSize) size, isMine, isDormant);
                 _trees.Add(tree);
             }
         }
 
-        private IAction ReadPossibleActions()
+        private void ReadPossibleActions()
         {
             Io.Debug("Getting next action");
 
@@ -165,8 +177,6 @@ namespace SpringChallenge2021
                 var possibleMove = Io.ReadLine();
                 _possibleActions.Add(Action.Parse(possibleMove));
             }
-
-            return GetNextAction();
         }
     }
 }
@@ -207,6 +217,23 @@ namespace SpringChallenge2021.Actions
         public string GetOutputAction()
         {
             return $"COMPLETE {_index}";
+        }
+    }
+}
+namespace SpringChallenge2021.Actions
+{
+    public class GrowAction : IAction
+    {
+        private readonly int _index;
+
+        public GrowAction(int index)
+        {
+            _index = index;
+        }
+
+        public string GetOutputAction()
+        {
+            return $"GROW {_index}";
         }
     }
 }
@@ -294,17 +321,27 @@ namespace SpringChallenge2021.Models
     public class Tree
     {
         private int _cellIndex;
-        private int _size;
+        private TreeSize _size;
         private bool _isMine;
         private bool _isDormant;
 
-        public Tree(int cellIndex, int size, bool isMine, bool isDormant)
+        public Tree(int cellIndex, TreeSize size, bool isMine, bool isDormant)
         {
             _cellIndex = cellIndex;
             _size = size;
             _isMine = isMine;
             _isDormant = isDormant;
         }
+    }
+}
+namespace SpringChallenge2021.Models
+{
+    public enum TreeSize
+    {
+        Unknown = 0,
+        Small = 1,
+        Medium = 2,
+        Lage = 3
     }
 }
 
