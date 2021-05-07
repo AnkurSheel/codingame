@@ -42,7 +42,18 @@ namespace SpringChallenge2021
         public IAction GetNextAction()
         {
             var completeAction = _possibleActions.FirstOrDefault(x => x is CompleteAction);
-            return completeAction ?? new WaitAction();
+            if (completeAction != null)
+            {
+                return completeAction;
+            }
+
+            var growAction = _possibleActions.FirstOrDefault(x => x is GrowAction);
+            if (growAction != null)
+            {
+                return growAction;
+            }
+
+            return new WaitAction();
         }
 
         private void GenerateBoard()
@@ -83,7 +94,7 @@ namespace SpringChallenge2021
             }
         }
 
-        private IAction ReadPossibleActions()
+        private void ReadPossibleActions()
         {
             Io.Debug("Getting next action");
 
@@ -94,8 +105,6 @@ namespace SpringChallenge2021
                 var possibleMove = Io.ReadLine();
                 _possibleActions.Add(Action.Parse(possibleMove));
             }
-
-            return GetNextAction();
         }
     }
 }
