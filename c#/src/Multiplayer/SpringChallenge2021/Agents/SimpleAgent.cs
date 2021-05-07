@@ -19,13 +19,36 @@ namespace SpringChallenge2021.Agents
                 return growAction;
             }
 
-            var seedAction = game.PossibleActions.FirstOrDefault(x => x is SeedAction);
+            var seedAction = GetBestSeedAction(game);
             if (seedAction != null)
             {
                 return seedAction;
             }
 
             return new WaitAction();
+        }
+
+        private IAction? GetBestSeedAction(Game game)
+        {
+            if (game.MyPlayer.Trees[TreeSize.Seed].Any())
+            {
+                return null;
+            }
+
+            var seedActions = game.PossibleActions.OfType<SeedAction>().ToList();
+            var bestSoilQuality = SoilQuality.Unusable;
+            var bestSeedAction = seedActions.FirstOrDefault();
+            foreach (var seedAction in seedActions)
+            {
+                var cellSoilQuality = game.Board[seedAction.SeedIndex].SoilQuality;
+                if (bestSoilQuality < cellSoilQuality)
+                {
+                    bestSoilQuality = cellSoilQuality;
+                    bestSeedAction = seedAction;
+                }
+            }
+
+            return bestSeedAction;
         }
     }
 }
