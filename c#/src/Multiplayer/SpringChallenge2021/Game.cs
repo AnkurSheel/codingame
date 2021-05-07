@@ -79,14 +79,24 @@ namespace SpringChallenge2021
 
         private void ReadPossibleActions()
         {
-            Io.Debug("Getting next action");
+            Io.Debug("Getting possible actions");
 
             PossibleActions.Clear();
             var numberOfPossibleMoves = int.Parse(Io.ReadLine());
             for (var i = 0; i < numberOfPossibleMoves; i++)
             {
                 var possibleMove = Io.ReadLine();
-                PossibleActions.Add(Action.Parse(possibleMove));
+
+                var parts = possibleMove.Split(" ");
+                IAction action = parts[0] switch
+                {
+                    "SEED" => new SeedAction(int.Parse(parts[1]), int.Parse(parts[2])),
+                    "GROW" => new GrowAction(int.Parse(parts[1])),
+                    "COMPLETE" => new CompleteAction(int.Parse(parts[1])),
+                    _ => new WaitAction()
+                };
+
+                PossibleActions.Add(action);
             }
         }
     }
