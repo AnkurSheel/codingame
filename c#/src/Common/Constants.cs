@@ -1,9 +1,11 @@
-﻿using System;
-
-namespace Common
+﻿namespace FallChallenge2020
 {
     public static class Constants
     {
-        public static readonly Random Random = new Random(123);
+        public const bool IsDebugOn = true;
+
+        public const bool IsForInput = false;
+
+        public const bool IsLocalRun = false;
     }
 }

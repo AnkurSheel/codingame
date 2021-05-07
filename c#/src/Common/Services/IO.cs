@@ -1,14 +1,7 @@
-﻿//#define LOCAL
-
-#define DEBUGON
-
-//#define FORINPUT
-
-
-using System;
+﻿using System;
 using System.IO;
 
-namespace Common.Services
+namespace FallChallenge2020.Services
 {
     public static class Io
     {
@@ -16,16 +9,18 @@ namespace Common.Services
 
         public static void Initialize()
         {
-#if (LOCAL)
-            _file = new StreamReader(@".\in.txt");
-#endif
+            if (Constants.IsLocalRun)
+            {
+                _file = new StreamReader(@".\in.txt");
+            }
         }
 
         public static void Debug(string output)
         {
-#if DEBUGON
-            Console.Error.WriteLine(output);
-#endif
+            if (Constants.IsDebugOn || Constants.IsForInput)
+            {
+                Console.Error.WriteLine(output);
+            }
         }
 
         public static void WriteLine(string output)
@@ -33,21 +28,29 @@ namespace Common.Services
             Console.WriteLine(output);
         }
 
-        private static string ReadLine()
+        public static string ReadLine()
         {
-#if LOCAL
-            return _file.ReadLine();
-#else
-            var input = Console.ReadLine();
-#if FORINPUT
-            Debug("IN");
-            Debug(input);
-            Debug("/IN");
-#else
-            Debug(input);
-#endif
-            return input;
-#endif
+            if (Constants.IsLocalRun)
+            {
+                return _file.ReadLine();
+            }
+            else
+            {
+                var input = Console.ReadLine();
+
+                if (Constants.IsForInput)
+                {
+                    Debug("IN");
+                    Debug(input);
+                    Debug("/IN");
+                }
+                else
+                {
+                    Debug(input);
+                }
+
+                return input;
+            }
         }
     }
 }
