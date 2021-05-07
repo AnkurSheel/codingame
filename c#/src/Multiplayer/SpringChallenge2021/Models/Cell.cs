@@ -1,15 +1,16 @@
 ﻿namespace SpringChallenge2021.Models
 {
-    internal class Cell
+    public class Cell
     {
         private int _index;
-        private SoilQuality _soilQuality;
         private int[] _neighbours;
+
+        public SoilQuality SoilQuality { get; }
 
         public Cell(int index, SoilQuality soilQuality, int[] neighbours)
         {
             _index = index;
-            _soilQuality = soilQuality;
+            SoilQuality = soilQuality;
             _neighbours = neighbours;
         }
     }

@@ -2,16 +2,16 @@
 {
     public class GrowAction : IAction
     {
-        private readonly int _index;
+        public int Index { get; }
 
         public GrowAction(int index)
         {
-            _index = index;
+            Index = index;
         }
 
         public string GetOutputAction()
         {
-            return $"GROW {_index}";
+            return $"GROW {Index}";
         }
     }
 }

@@ -3,17 +3,17 @@
     public class SeedAction : IAction
     {
         private readonly int _srcTreeIndex;
-        private readonly int _seedIndex;
+        public int SeedIndex { get; }
 
         public SeedAction(int srcTreeIndex, int seedIndex)
         {
             _srcTreeIndex = srcTreeIndex;
-            _seedIndex = seedIndex;
+            SeedIndex = seedIndex;
         }
 
         public string GetOutputAction()
         {
-            return $"SEED {_srcTreeIndex} {_seedIndex}";
+            return $"SEED {_srcTreeIndex} {SeedIndex}";
         }
     }
 }
