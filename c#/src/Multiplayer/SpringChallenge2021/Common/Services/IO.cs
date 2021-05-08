@@ -17,7 +17,7 @@ namespace SpringChallenge2021.Common.Services
 
         public static void Debug(string output)
         {
-            if (Constants.IsDebugOn || Constants.IsForInput)
+            if (Constants.IsDebugOn || Constants.IsForInput || Constants.ShowInput)
             {
                 Console.Error.WriteLine(output);
             }
@@ -44,7 +44,7 @@ namespace SpringChallenge2021.Common.Services
                     Debug(input);
                     Debug("/IN");
                 }
-                else
+                else if(Constants.ShowInput)
                 {
                     Debug(input);
                 }
