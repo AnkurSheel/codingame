@@ -3,9 +3,9 @@ using SpringChallenge2021.Common.Services;
 
 namespace SpringChallenge2021
 {
-    internal class Program
+    public class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Io.Initialize();
 
