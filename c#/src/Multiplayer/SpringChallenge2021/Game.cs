@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SpringChallenge2021.Actions;
 using SpringChallenge2021.Common.Services;
 using SpringChallenge2021.Models;
@@ -11,12 +12,18 @@ namespace SpringChallenge2021
         private readonly Player _opponentPlayer;
 
         public List<IAction> PossibleActions { get; }
+
         public Dictionary<int, Cell> Board { get; }
 
         public Dictionary<int, Tree> Trees { get; }
+
         public Player MyPlayer { get; }
 
         public int Day { get; private set; }
+
+        public HexDirection SunDirection { get; set; }
+
+        public HashSet<Cell> Shadows { get; }
 
         public Game()
         {
@@ -27,17 +34,22 @@ namespace SpringChallenge2021
             _opponentPlayer = new Player();
 
             GenerateBoard();
+            Shadows = new HashSet<Cell>();
         }
 
         public void ReInit()
         {
             Trees.Clear();
             PossibleActions.Clear();
+            Shadows.Clear();
 
             MyPlayer.ReInit();
             _opponentPlayer.ReInit();
 
             ReadGameState();
+
+            SunDirection = (HexDirection) (Day % 6);
+            SetupShadows();
         }
 
         private void ReadGameState()
@@ -66,9 +78,15 @@ namespace SpringChallenge2021
                 var neigh3 = int.Parse(inputs[5]);
                 var neigh4 = int.Parse(inputs[6]);
                 var neigh5 = int.Parse(inputs[7]);
+
                 int[] neighs = {neigh0, neigh1, neigh2, neigh3, neigh4, neigh5};
                 var cell = new Cell(index, (SoilQuality) richness, neighs);
                 Board.Add(index, cell);
+            }
+
+            foreach (var (_, cell) in Board)
+            {
+                cell.UpdateNeighbours(Board);
             }
         }
 
@@ -116,6 +134,30 @@ namespace SpringChallenge2021
                 };
 
                 PossibleActions.Add(action);
+            }
+        }
+
+        private void SetupShadows()
+        {
+            foreach (var (treeIndex, tree) in Trees)
+            {
+                var cell = Board[treeIndex];
+                for (var i = 0; i < (int) tree.Size && cell != null; i++)
+                {
+                    var neighbour = cell.Neighbours[SunDirection];
+                    if (neighbour != null)
+                    {
+                        Shadows.Add(neighbour);
+                    }
+
+                    cell = neighbour;
+                }
+            }
+
+            Io.Debug($"Shadows {Shadows.Count}");
+            foreach (var shadow in Shadows)
+            {
+                Io.Debug($"{shadow.Index}");
             }
         }
     }
