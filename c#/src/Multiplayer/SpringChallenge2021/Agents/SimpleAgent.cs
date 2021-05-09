@@ -35,14 +35,17 @@ namespace SpringChallenge2021.Agents
 
         private static IAction? GetBestCompleteAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep  && game.Day < Constants.DayCutOff)
+            var completeActions = game.PossibleActions.OfType<CompleteAction>().ToList();
+
+            if (!completeActions.Any()
+                || game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep
+                && game.Day < Constants.DayCutOff)
             {
                 return null;
             }
 
-            var completeActions = game.PossibleActions.OfType<CompleteAction>().ToList();
             var bestCompleteAction = completeActions.FirstOrDefault();
-            var bestSoilQuality = SoilQuality.Unusable;
+            var bestSoilQuality = game.Board[bestCompleteAction.Index].SoilQuality;
             foreach (var completeAction in completeActions)
             {
                 var cellSoilQuality = game.Board[completeAction.Index].SoilQuality;
