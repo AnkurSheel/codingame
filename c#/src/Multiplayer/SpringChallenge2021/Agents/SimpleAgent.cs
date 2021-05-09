@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using SpringChallenge2021.Actions;
-using SpringChallenge2021.Common.Services;
 using SpringChallenge2021.Models;
 
 namespace SpringChallenge2021.Agents
@@ -15,14 +14,17 @@ namespace SpringChallenge2021.Agents
                 return completeAction;
             }
 
-            if (game.Day < Constants.DayCutOff + 1)
+            if (game.Day <= Constants.DayCutOff || (!game.MyPlayer.Trees[TreeSize.Large].Any()))
             {
                 var growAction = GetBestGrowAction(game);
                 if (growAction != null)
                 {
                     return growAction;
                 }
+            }
 
+            if (game.Day <= Constants.DayCutOff)
+            {
                 var seedAction = GetBestSeedAction(game);
                 if (seedAction != null)
                 {
