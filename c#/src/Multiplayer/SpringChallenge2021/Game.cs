@@ -20,11 +20,11 @@ namespace SpringChallenge2021
 
         public int Day { get; private set; }
 
-        public HexDirection SunDirection { get; set; }
+        public HexDirection SunDirection { get; private set; }
 
-        public HashSet<Cell> Shadows { get; }
+        public Dictionary<Cell, TreeSize> Shadows { get; }
 
-        public HashSet<Cell> ShadowsNextDay { get; set; }
+        public Dictionary<Cell, TreeSize> ShadowsNextDay { get; }
 
         public Game()
         {
@@ -35,8 +35,8 @@ namespace SpringChallenge2021
             _opponentPlayer = new Player();
 
             GenerateBoard();
-            Shadows = new HashSet<Cell>();
-            ShadowsNextDay = new HashSet<Cell>();
+            Shadows = new Dictionary<Cell, TreeSize>();
+            ShadowsNextDay = new Dictionary<Cell, TreeSize>();
         }
 
         public void ReInit()
@@ -148,11 +148,10 @@ namespace SpringChallenge2021
         private void SetupShadowsForNextDay()
         {
             var sunDirection = (HexDirection) (((int) SunDirection + 1) % 6);
-            Io.Debug($"Next Sun Direction {sunDirection}");
             GetShadows(sunDirection, ShadowsNextDay);
         }
 
-        private void GetShadows(HexDirection sunDirection, ISet<Cell> shadows)
+        private void GetShadows(HexDirection sunDirection, IDictionary<Cell, TreeSize> shadows)
         {
             foreach (var (treeIndex, tree) in Trees)
             {
@@ -162,7 +161,17 @@ namespace SpringChallenge2021
                     var neighbour = cell.Neighbours[sunDirection];
                     if (neighbour != null)
                     {
-                        shadows.Add(neighbour);
+                        if (shadows.ContainsKey(neighbour))
+                        {
+                            if (shadows[neighbour] > tree.Size)
+                            {
+                                shadows[neighbour] = tree.Size;
+                            }
+                        }
+                        else
+                        {
+                            shadows.Add(neighbour, tree.Size);
+                        }
                     }
 
                     cell = neighbour;

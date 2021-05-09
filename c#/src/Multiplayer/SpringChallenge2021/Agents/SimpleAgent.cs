@@ -63,17 +63,28 @@ namespace SpringChallenge2021.Agents
             var bestGrowAction = growActions.FirstOrDefault();
             foreach (var growAction in growActions)
             {
+                var cell = game.Board[growAction.Index];
+                if (game.ShadowsNextDay.ContainsKey(cell))
+                {
+                    var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell];
+                    var sizeOfTreeAfterGrowth = game.Trees[growAction.Index].Size + 1;
+                    if (sizeOfTreeAfterGrowth <= sizeOfTreeCastingShadow)
+                    {
+                        continue;
+                    }
+                }
+
                 var cellTreeSize = game.Trees[growAction.Index].Size;
 
                 if (bestTreeSize < cellTreeSize)
                 {
                     bestTreeSize = cellTreeSize;
                     bestGrowAction = growAction;
-                    bestSoilQuality = game.Board[growAction.Index].SoilQuality;
+                    bestSoilQuality = cell.SoilQuality;
                 }
                 else if (bestTreeSize == cellTreeSize)
                 {
-                    var cellSoilQuality = game.Board[growAction.Index].SoilQuality;
+                    var cellSoilQuality = cell.SoilQuality;
                     if (bestSoilQuality < cellSoilQuality)
                     {
                         bestSoilQuality = cellSoilQuality;
