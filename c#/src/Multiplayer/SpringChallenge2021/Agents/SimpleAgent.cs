@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using SpringChallenge2021.Actions;
+using SpringChallenge2021.Common.Services;
 using SpringChallenge2021.Models;
 
 namespace SpringChallenge2021.Agents
@@ -34,7 +35,7 @@ namespace SpringChallenge2021.Agents
 
         private static IAction? GetBestCompleteAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < Constants.DayCutOff)
+            if (game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep  && game.Day < Constants.DayCutOff)
             {
                 return null;
             }
