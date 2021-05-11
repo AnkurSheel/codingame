@@ -10,7 +10,7 @@ namespace SpringChallenge2021
             Io.Initialize();
 
             var game = new Game();
-            var agent = new SimpleAgent();
+            var agent = new HeuristicsAgent();
 
             // game loop
             while (true)

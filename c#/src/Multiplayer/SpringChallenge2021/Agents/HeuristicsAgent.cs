@@ -1,11 +1,18 @@
 ﻿using System.Linq;
 using SpringChallenge2021.Actions;
 using SpringChallenge2021.Models;
+using SpringChallenge2021.Scorers;
 
 namespace SpringChallenge2021.Agents
 {
-    public class SimpleAgent
+    public class HeuristicsAgent
     {
+        private readonly GrowActionScorer _growActionScorer;
+
+        public HeuristicsAgent()
+        {
+            _growActionScorer = new GrowActionScorer();
+        }
         public IAction GetAction(Game game)
         {
             var completeAction = GetBestCompleteAction(game);
@@ -16,7 +23,7 @@ namespace SpringChallenge2021.Agents
 
             if (game.Day <= Constants.DayCutOff || (!game.MyPlayer.Trees[TreeSize.Large].Any()))
             {
-                var growAction = GetBestGrowAction(game);
+                var growAction = _growActionScorer.GetBestGrowAction(game);
                 if (growAction != null)
                 {
                     return growAction;
@@ -59,47 +66,6 @@ namespace SpringChallenge2021.Agents
             }
 
             return bestCompleteAction;
-        }
-
-        private static IAction? GetBestGrowAction(Game game)
-        {
-            var growActions = game.PossibleActions.OfType<GrowAction>().ToList();
-            var bestSoilQuality = SoilQuality.Unusable;
-            var bestTreeSize = TreeSize.Seed;
-            var bestGrowAction = growActions.FirstOrDefault();
-            foreach (var growAction in growActions)
-            {
-                var cell = game.Board[growAction.Index];
-                if (game.ShadowsNextDay.ContainsKey(cell))
-                {
-                    var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell];
-                    var sizeOfTreeAfterGrowth = game.Trees[growAction.Index].Size + 1;
-                    if (sizeOfTreeAfterGrowth <= sizeOfTreeCastingShadow)
-                    {
-                        continue;
-                    }
-                }
-
-                var cellTreeSize = game.Trees[growAction.Index].Size;
-
-                if (bestTreeSize < cellTreeSize)
-                {
-                    bestTreeSize = cellTreeSize;
-                    bestGrowAction = growAction;
-                    bestSoilQuality = cell.SoilQuality;
-                }
-                else if (bestTreeSize == cellTreeSize)
-                {
-                    var cellSoilQuality = cell.SoilQuality;
-                    if (bestSoilQuality < cellSoilQuality)
-                    {
-                        bestSoilQuality = cellSoilQuality;
-                        bestGrowAction = growAction;
-                    }
-                }
-            }
-
-            return bestGrowAction;
         }
 
         private IAction? GetBestSeedAction(Game game)
