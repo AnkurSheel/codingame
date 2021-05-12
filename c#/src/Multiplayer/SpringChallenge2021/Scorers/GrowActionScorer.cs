@@ -17,7 +17,9 @@ namespace SpringChallenge2021.Scorers
 
         public IAction? GetBestGrowAction(Game game)
         {
-            if (game.MyPlayer.Trees.Count >= Constants.MaxTreesToKeep
+            var growActions = game.PossibleActions.OfType<GrowAction>().ToList();
+            if (!growActions.Any()
+                || game.MyPlayer.Trees.Count >= Constants.MaxTreesToKeep
                 || game.Day >= Constants.DayCutOffForHarvesting && game.MyPlayer.Trees[TreeSize.Large].Any())
             {
                 return null;
@@ -25,11 +27,11 @@ namespace SpringChallenge2021.Scorers
 
             var costForGrowActions = GetCostForAction(game.MyPlayer.Trees);
 
-            var growActions = game.PossibleActions.OfType<GrowAction>().ToList();
             var bestScore = int.MinValue;
-            var bestGrowAction = growActions.FirstOrDefault();
+            GrowAction bestGrowAction = null;
             foreach (var growAction in growActions)
             {
+                var cell = game.Board[growAction.Index];
                 var tree = game.Trees[growAction.Index];
                 var cellTreeSize = tree.Size;
                 var sizeOfTreeAfterGrowth = cellTreeSize + 1;
@@ -39,7 +41,6 @@ namespace SpringChallenge2021.Scorers
                     continue;
                 }
 
-                var cell = game.Board[growAction.Index];
                 if (game.ShadowsNextDay.ContainsKey(cell))
                 {
                     var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell];
@@ -49,6 +50,11 @@ namespace SpringChallenge2021.Scorers
                     }
                 }
 
+                var numberOfOpponentTreesBlocked =
+                    game.Shadows.Count(x =>
+                        x.Value == tree && !x.Value.IsMine && x.Value.Size <= sizeOfTreeAfterGrowth);
+                var numberOfMyTreesBlocked =
+                    game.Shadows.Count(x => x.Value == tree && x.Value.IsMine && x.Value.Size <= sizeOfTreeAfterGrowth);
                 var score = (int) sizeOfTreeAfterGrowth
                             - costForGrowActions[sizeOfTreeAfterGrowth]
                             + (int) cell.SoilQuality;
@@ -57,6 +63,9 @@ namespace SpringChallenge2021.Scorers
                 {
                     score += game.Nutrients;
                 }
+
+                Io.Debug(
+                    $"Grow Action Score - Score:{score} - Index:{growAction.Index} - sizeOfTreeAfterGrowth:{sizeOfTreeAfterGrowth} - costForGrowActions:{costForGrowActions[sizeOfTreeAfterGrowth]} - soilQuality:{cell.SoilQuality} - numberOfOpponentTreesBlocked:{numberOfOpponentTreesBlocked} - numberOfMyTreesBlocked:{numberOfMyTreesBlocked}");
 
                 if (bestScore < score)
                 {

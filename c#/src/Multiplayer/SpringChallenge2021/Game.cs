@@ -54,6 +54,7 @@ namespace SpringChallenge2021
             ReadGameState();
 
             SunDirection = (HexDirection) (Day % 6);
+            SetupShadows();
             SetupShadowsForNextDay();
         }
 
