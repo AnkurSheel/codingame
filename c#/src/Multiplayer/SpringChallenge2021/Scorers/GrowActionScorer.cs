@@ -34,6 +34,11 @@ namespace SpringChallenge2021.Scorers
                 var cellTreeSize = tree.Size;
                 var sizeOfTreeAfterGrowth = cellTreeSize + 1;
 
+                if (game.Day >= Constants.DayCutOffForGrowing && sizeOfTreeAfterGrowth != TreeSize.Large)
+                {
+                    continue;
+                }
+
                 var cell = game.Board[growAction.Index];
                 if (game.ShadowsNextDay.ContainsKey(cell))
                 {
