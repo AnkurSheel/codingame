@@ -38,7 +38,7 @@ namespace SpringChallenge2021.Scorers
                 if (game.ShadowsNextDay.ContainsKey(cell))
                 {
                     var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell];
-                    if (sizeOfTreeAfterGrowth <= sizeOfTreeCastingShadow)
+                    if (sizeOfTreeAfterGrowth <= sizeOfTreeCastingShadow.Size)
                     {
                         continue;
                     }

@@ -24,9 +24,9 @@ namespace SpringChallenge2021
 
         public HexDirection SunDirection { get; private set; }
 
-        public Dictionary<Cell, TreeSize> Shadows { get; }
+        public Dictionary<Cell, Tree> Shadows { get; }
 
-        public Dictionary<Cell, TreeSize> ShadowsNextDay { get; }
+        public Dictionary<Cell, Tree> ShadowsNextDay { get; }
 
         public Game()
         {
@@ -37,8 +37,8 @@ namespace SpringChallenge2021
             _opponentPlayer = new Player();
 
             GenerateBoard();
-            Shadows = new Dictionary<Cell, TreeSize>();
-            ShadowsNextDay = new Dictionary<Cell, TreeSize>();
+            Shadows = new Dictionary<Cell, Tree>();
+            ShadowsNextDay = new Dictionary<Cell, Tree>();
         }
 
         public void ReInit()
@@ -153,7 +153,7 @@ namespace SpringChallenge2021
             GetShadows(sunDirection, ShadowsNextDay);
         }
 
-        private void GetShadows(HexDirection sunDirection, IDictionary<Cell, TreeSize> shadows)
+        private void GetShadows(HexDirection sunDirection, Dictionary<Cell, Tree> shadows)
         {
             foreach (var (treeIndex, tree) in Trees)
             {
@@ -165,14 +165,14 @@ namespace SpringChallenge2021
                     {
                         if (shadows.ContainsKey(neighbour))
                         {
-                            if (shadows[neighbour] > tree.Size)
+                            if (shadows[neighbour].Size > tree.Size)
                             {
-                                shadows[neighbour] = tree.Size;
+                                shadows[neighbour] = tree;
                             }
                         }
                         else
                         {
-                            shadows.Add(neighbour, tree.Size);
+                            shadows.Add(neighbour, tree);
                         }
                     }
 

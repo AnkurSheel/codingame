@@ -72,7 +72,7 @@ namespace SpringChallenge2021.Agents
                 var cell = game.Board[growAction.Index];
                 if (game.ShadowsNextDay.ContainsKey(cell))
                 {
-                    var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell];
+                    var sizeOfTreeCastingShadow = game.ShadowsNextDay[cell].Size;
                     var sizeOfTreeAfterGrowth = game.Trees[growAction.Index].Size + 1;
                     if (sizeOfTreeAfterGrowth <= sizeOfTreeCastingShadow)
                     {
