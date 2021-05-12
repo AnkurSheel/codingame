@@ -7,8 +7,10 @@ namespace SpringChallenge2021
 {
     public class Game
     {
-        private int _nutrients;
+
         private readonly Player _opponentPlayer;
+
+        public int Nutrients { get; private set; }
 
         public List<IAction> PossibleActions { get; }
 
@@ -58,7 +60,7 @@ namespace SpringChallenge2021
         private void ReadGameState()
         {
             Day = int.Parse(Io.ReadLine()); // the game lasts 24 days: 0-23
-            _nutrients = int.Parse(Io.ReadLine()); // the base score you gain from the next COMPLETE action
+            Nutrients = int.Parse(Io.ReadLine()); // the base score you gain from the next COMPLETE action
 
             MyPlayer.Parse();
             _opponentPlayer.Parse();
