@@ -13,6 +13,7 @@ namespace SpringChallenge2021.Agents
         {
             _growActionScorer = new GrowActionScorer();
         }
+
         public IAction GetAction(Game game)
         {
             var completeAction = GetBestCompleteAction(game);
@@ -21,16 +22,13 @@ namespace SpringChallenge2021.Agents
                 return completeAction;
             }
 
-            if (game.Day <= Constants.DayCutOff || (!game.MyPlayer.Trees[TreeSize.Large].Any()))
+            var growAction = _growActionScorer.GetBestGrowAction(game);
+            if (growAction != null)
             {
-                var growAction = _growActionScorer.GetBestGrowAction(game);
-                if (growAction != null)
-                {
-                    return growAction;
-                }
+                return growAction;
             }
 
-            if (game.Day <= Constants.DayCutOff)
+            if (game.Day <= Constants.DayCutOffForGrowing)
             {
                 var seedAction = GetBestSeedAction(game);
                 if (seedAction != null)
@@ -48,7 +46,7 @@ namespace SpringChallenge2021.Agents
 
             if (!completeActions.Any()
                 || game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep
-                && game.Day < Constants.DayCutOff)
+                && game.Day < Constants.DayCutOffForHarvesting)
             {
                 return null;
             }
@@ -70,7 +68,7 @@ namespace SpringChallenge2021.Agents
 
         private IAction? GetBestSeedAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Seed].Any())
+            if (game.MyPlayer.Trees[TreeSize.Seed].Any() || game.MyPlayer.Trees.Count >= Constants.MaxTreesToKeep)
             {
                 return null;
             }

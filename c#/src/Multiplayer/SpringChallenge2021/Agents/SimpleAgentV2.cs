@@ -14,7 +14,7 @@ namespace SpringChallenge2021.Agents
                 return completeAction;
             }
 
-            if (game.Day < Constants.DayCutOff + 1)
+            if (game.Day < Constants.DayCutOffForHarvesting + 1)
             {
                 var growAction = GetBestGrowAction(game);
                 if (growAction != null)
@@ -34,7 +34,7 @@ namespace SpringChallenge2021.Agents
 
         private static IAction? GetBestCompleteAction(Game game)
         {
-            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < Constants.DayCutOff)
+            if (game.MyPlayer.Trees[TreeSize.Large].Count < 3 && game.Day < Constants.DayCutOffForHarvesting)
             {
                 return null;
             }

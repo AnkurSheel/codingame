@@ -17,6 +17,12 @@ namespace SpringChallenge2021.Scorers
 
         public IAction? GetBestGrowAction(Game game)
         {
+            if (game.MyPlayer.Trees.Count >= Constants.MaxTreesToKeep
+                || game.Day >= Constants.DayCutOffForHarvesting && game.MyPlayer.Trees[TreeSize.Large].Any())
+            {
+                return null;
+            }
+
             var costForGrowActions = GetCostForAction(game.MyPlayer.Trees);
 
             var growActions = game.PossibleActions.OfType<GrowAction>().ToList();
