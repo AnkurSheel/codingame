@@ -45,7 +45,7 @@ namespace SpringChallenge2021.Agents
             var completeActions = game.PossibleActions.OfType<CompleteAction>().ToList();
 
             if (!completeActions.Any()
-                || game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep
+                || game.MyPlayer.Score == 0 && game.MyPlayer.Trees[TreeSize.Large].Count < Constants.MaxLargeTreesToKeep
                 && game.Day < Constants.DayCutOffForHarvesting)
             {
                 return null;

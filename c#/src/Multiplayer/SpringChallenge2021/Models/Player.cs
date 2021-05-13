@@ -6,10 +6,12 @@ namespace SpringChallenge2021.Models
     public class Player
     {
         private int _sunPoints;
-        private int _score;
+
+
         private bool _isWaiting;
 
         public Dictionary<TreeSize, List<Tree>> Trees { get; }
+        public int Score { get; private set; }
 
         public Player()
         {
@@ -36,7 +38,7 @@ namespace SpringChallenge2021.Models
             var inputs = Io.ReadLine().Split(' ');
 
             _sunPoints = int.Parse(inputs[0]);
-            _score = int.Parse(inputs[1]); // your current score
+            Score = int.Parse(inputs[1]); // your current score
             _isWaiting = false;
 
             if (inputs.Length == 3)
