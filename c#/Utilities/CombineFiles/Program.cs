@@ -13,7 +13,9 @@ namespace CombineFilesCsharp
 
         private static async Task Main(string[] args)
         {
+            Console.WriteLine(Path.GetFullPath(InputDirectory));
             var lastWriteTime = DateTime.MinValue;
+
             while (true)
             {
                 await Task.Delay(500);
@@ -25,14 +27,14 @@ namespace CombineFilesCsharp
                 }
 
                 lastWriteTime = currentLastWriteTime;
-                File.WriteAllText(Output, CreateFile(files, currentLastWriteTime));
+                await File.WriteAllTextAsync(Output, CreateFile(files, currentLastWriteTime));
                 Console.WriteLine("Updated " + lastWriteTime.ToString("dd/MM/yyyy hh:mm"));
             }
         }
 
         private static string CreateFile(string[] files, DateTime writeTime)
         {
-            var content = files.SelectMany(f => File.ReadAllLines(f)).ToList();
+            var content = files.SelectMany(File.ReadAllLines).ToList();
             var usings = content.Where(line => line.StartsWith("using")).Distinct().ToList();
             content.RemoveAll(lines => lines.StartsWith("using"));
 
