@@ -12,7 +12,7 @@ namespace SpringChallenge2022.Agents
         {
             var actions = new List<IAction>();
 
-            var rankedMonsters = new List<Tuple<int, Entity>>();
+            var rankedMonsters = new List<Tuple<int, Monster>>();
 
             foreach (var (_, monster) in game.Monsters)
             {
@@ -30,7 +30,7 @@ namespace SpringChallenge2022.Agents
                 var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
                 var distanceScore = 500 * (1 / distance + 1);
 
-                rankedMonsters.Add(new Tuple<int, Entity>(threatLevel + distanceScore, monster));
+                rankedMonsters.Add(new Tuple<int, Monster>(threatLevel + distanceScore, monster));
             }
 
             rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();

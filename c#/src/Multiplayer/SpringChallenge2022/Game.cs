@@ -52,7 +52,7 @@ internal class Game
         {
             inputs = Io.ReadLine().Split(' ');
             var id = int.Parse(inputs[0]); // Unique identifier
-            var type = Enum.Parse<EntityType>(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
+            var type = int.Parse(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
             var x = int.Parse(inputs[2]); // Position of this entity
             var y = int.Parse(inputs[3]);
             var shieldLife = int.Parse(inputs[4]); // Ignore for this league; Count down until shield spell fades
@@ -65,7 +65,7 @@ internal class Game
 
             switch (type)
             {
-                case EntityType.MONSTER:
+                case 0:
                     var monster = new Monster(
                         id,
                         new Vector(x, y),
@@ -75,10 +75,10 @@ internal class Game
                         threatFor);
                     Monsters.Add(id, monster);
                     break;
-                case EntityType.HERO:
+                case 1:
                     if (MyHeroes.ContainsKey(id))
                     {
-                        MyHeroes[id].UpdatePosition(new Vector(x, y));
+                        MyHeroes[id].Update(new Vector(x, y));
                     }
                     else
                     {
@@ -86,7 +86,7 @@ internal class Game
                     }
 
                     break;
-                case EntityType.OPPONENT_HERO:
+                case 2:
                     _opponentHeroes.Add(new Hero(id, new Vector(x, y)));
                     break;
                 default:

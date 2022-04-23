@@ -2,10 +2,14 @@
 
 namespace SpringChallenge2022.Models
 {
-    public class Monster : Entity
+    public class Monster
     {
         private int _health;
         private Vector _speed;
+
+        public int Id { get; }
+
+        public Vector Position { get; private set; }
 
         public bool TargetingBase { get; }
 
@@ -17,8 +21,10 @@ namespace SpringChallenge2022.Models
             int health,
             Vector speed,
             bool targetingBase,
-            int threatFor) : base(id, position)
+            int threatFor)
         {
+            Id = id;
+            Position = position;
             _health = health;
             _speed = speed;
             TargetingBase = targetingBase;
