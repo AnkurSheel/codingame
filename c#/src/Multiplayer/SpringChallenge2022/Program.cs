@@ -8,7 +8,7 @@ internal class Player
         Io.Initialize();
 
         var game = new Game();
-        var agent = new AgentWood2Boss();
+        var agent = new AgentWood1Boss();
 
         game.Initialize();
 
