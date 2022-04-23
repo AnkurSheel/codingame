@@ -1,4 +1,4 @@
-using SpringChallenge2022.Models;
+using System.Numerics;
 
 namespace SpringChallenge2022.Actions
 {
@@ -6,9 +6,9 @@ namespace SpringChallenge2022.Actions
     {
         private const int Range = 2200;
         private readonly int _id;
-        private readonly Vector _targetPosition;
+        private readonly Vector2 _targetPosition;
 
-        public ControlSpellAction(int id, Vector targetPosition)
+        public ControlSpellAction(int id, Vector2 targetPosition)
         {
             _id = id;
             _targetPosition = targetPosition;

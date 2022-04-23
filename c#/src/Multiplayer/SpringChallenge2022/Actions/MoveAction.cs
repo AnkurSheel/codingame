@@ -1,12 +1,13 @@
+using System.Numerics;
 using SpringChallenge2022.Models;
 
 namespace SpringChallenge2022.Actions
 {
     internal class MoveAction : IAction
     {
-        private readonly Vector _position;
+        private readonly Vector2 _position;
 
-        public MoveAction(Vector position)
+        public MoveAction(Vector2 position)
         {
             _position = position;
         }

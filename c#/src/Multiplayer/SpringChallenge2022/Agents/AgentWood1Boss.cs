@@ -47,7 +47,7 @@ namespace SpringChallenge2022.Agents
                         continue;
                     }
 
-                    var distance = hero.Position.GetDistanceSquared(monster.Position);
+                    var distance = (int)(hero.Position - monster.Position).LengthSquared();
 
                     if (distance < bestMonsterDistance)
                     {
@@ -90,7 +90,7 @@ namespace SpringChallenge2022.Agents
                 if (monster.ThreatFor == 1)
                 {
                     var threatLevel = 0;
-                    var distance = game.MyPlayer.BasePosition.GetDistanceSquared(monster.Position);
+                    var distance = (int)(game.MyPlayer.BasePosition - monster.Position).LengthSquared();
                     var distanceScore = 500 * (1 / distance + 1);
 
                     if (monster.TargetingBase)

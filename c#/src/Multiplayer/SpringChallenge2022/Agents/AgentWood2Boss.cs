@@ -27,7 +27,7 @@ namespace SpringChallenge2022.Agents
                     threatLevel = 500;
                 }
 
-                var distance = game.MyPlayer.BasePosition.GetDistanceSquared(monster.Position);
+                var distance = (int)(game.MyPlayer.BasePosition - monster.Position).LengthSquared();
                 var distanceScore = 500 * (1 / distance + 1);
 
                 rankedMonsters.Add(new Tuple<int, Monster>(threatLevel + distanceScore, monster));

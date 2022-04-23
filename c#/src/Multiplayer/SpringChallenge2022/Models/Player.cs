@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using SpringChallenge2022.Common.Services;
 
 namespace SpringChallenge2022.Models
@@ -11,9 +12,9 @@ namespace SpringChallenge2022.Models
 
         public Dictionary<int, Hero> Heroes { get; } = new Dictionary<int, Hero>();
 
-        public Vector BasePosition { get; }
+        public Vector2 BasePosition { get; }
 
-        public Player(Vector basePosition)
+        public Player(Vector2 basePosition)
         {
             BasePosition = basePosition;
         }

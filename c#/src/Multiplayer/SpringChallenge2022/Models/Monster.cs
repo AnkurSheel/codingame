@@ -1,15 +1,15 @@
-﻿using SpringChallenge2022.Agents;
+﻿using System.Numerics;
 
 namespace SpringChallenge2022.Models
 {
     public class Monster
     {
         private int _health;
-        private Vector _speed;
+        private Vector2 _speed;
 
         public int Id { get; }
 
-        public Vector Position { get; private set; }
+        public Vector2 Position { get; }
 
         public bool TargetingBase { get; }
 
@@ -17,9 +17,9 @@ namespace SpringChallenge2022.Models
 
         public Monster(
             int id,
-            Vector position,
+            Vector2 position,
             int health,
-            Vector speed,
+            Vector2 speed,
             bool targetingBase,
             int threatFor)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using SpringChallenge2022;
 using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
@@ -24,8 +25,8 @@ internal class Game
         var baseX = int.Parse(inputs[0]);
         var baseY = int.Parse(inputs[1]);
 
-        MyPlayer = new Player(new Vector(baseX, baseY));
-        _opponentPlayer = new Player(new Vector(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
+        MyPlayer = new Player(new Vector2(baseX, baseY));
+        _opponentPlayer = new Player(new Vector2(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
 
         // heroesPerPlayer: Always 3
         _heroesPerPlayer = int.Parse(Io.ReadLine());
@@ -74,9 +75,9 @@ internal class Game
                 case 0:
                     var monster = new Monster(
                         id,
-                        new Vector(x, y),
+                        new Vector2(x, y),
                         health,
-                        new Vector(vx, vy),
+                        new Vector2(vx, vy),
                         nearBase == 1,
                         threatFor);
                     Monsters.Add(id, monster);
@@ -84,16 +85,16 @@ internal class Game
                 case 1:
                     if (MyPlayer.Heroes.ContainsKey(id))
                     {
-                        MyPlayer.Heroes[id].Update(new Vector(x, y));
+                        MyPlayer.Heroes[id].Update(new Vector2(x, y));
                     }
                     else
                     {
-                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector(x, y)));
+                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
                     }
 
                     break;
                 case 2:
-                    _opponentHeroes.Add(new Hero(id, new Vector(x, y)));
+                    _opponentHeroes.Add(new Hero(id, new Vector2(x, y)));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

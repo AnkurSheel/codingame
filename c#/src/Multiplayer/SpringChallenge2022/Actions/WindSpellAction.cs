@@ -1,13 +1,13 @@
-﻿using SpringChallenge2022.Models;
+﻿using System.Numerics;
 
 namespace SpringChallenge2022.Actions
 {
     public class WindSpellAction : IAction
     {
         private const int Range = 1280;
-        private readonly Vector _targetPosition;
+        private readonly Vector2 _targetPosition;
 
-        public WindSpellAction(Vector targetPosition)
+        public WindSpellAction(Vector2 targetPosition)
         {
             _targetPosition = targetPosition;
         }
