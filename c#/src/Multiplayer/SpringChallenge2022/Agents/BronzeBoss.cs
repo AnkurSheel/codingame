@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using SpringChallenge2022.Actions;
 using SpringChallenge2022.Common.Services;
@@ -17,16 +16,27 @@ namespace SpringChallenge2022.Agents
 
             Io.Debug($"RankedMonsters {rankedMonsters.Count}");
 
-            foreach (var monster in rankedMonsters)
+            foreach (var rankedMonster in rankedMonsters)
             {
-                Io.Debug($"Evaluating {monster.Id}");
+                Io.Debug($"Evaluating {rankedMonster}");
 
-                var heroTargetingMonster = game.MyPlayer.Heroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == monster.Id);
+                var heroTargetingMonster = game.MyPlayer.Heroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == rankedMonster.Monster.Id);
 
                 if (heroTargetingMonster != null)
                 {
-                    Io.Debug($"hero {heroTargetingMonster.Id} already targeted {monster.Id}");
-                    actions.Add(heroTargetingMonster.Id, new MoveAction(monster.Position));
+                    Io.Debug($"hero {heroTargetingMonster.Id} already targeted {rankedMonster.Monster.Id}");
+
+                    if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
+                        && game.MyPlayer.Mana > Constants.ManaRequiredForSpell
+                        && IsMonsterInRange(heroTargetingMonster, rankedMonster.Monster, Constants.ControlSpellRange))
+                    {
+                        actions.Add(heroTargetingMonster.Id, new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition));
+                    }
+                    else
+                    {
+                        actions.Add(heroTargetingMonster.Id, new MoveAction(rankedMonster.Monster.Position));
+                    }
+
                     continue;
                 }
 
@@ -40,7 +50,7 @@ namespace SpringChallenge2022.Agents
                         continue;
                     }
 
-                    var distance = (int)(hero.Position - monster.Position).LengthSquared();
+                    var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
 
                     if (distance < bestHeroDistance)
                     {
@@ -51,9 +61,9 @@ namespace SpringChallenge2022.Agents
 
                 if (bestHero != null)
                 {
-                    bestHero.TargetedMonster = monster;
+                    bestHero.TargetedMonster = rankedMonster.Monster;
                     Io.Debug($"hero {bestHero.Id} targeting {bestHero.TargetedMonster.Id}");
-                    actions.Add(bestHero.Id, new MoveAction(monster.Position));
+                    actions.Add(bestHero.Id, new MoveAction(rankedMonster.Monster.Position));
                 }
             }
 
@@ -63,7 +73,7 @@ namespace SpringChallenge2022.Agents
                 {
                     if (rankedMonsters.Any())
                     {
-                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Position));
+                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Monster.Position));
                     }
                     else
                     {
@@ -75,17 +85,26 @@ namespace SpringChallenge2022.Agents
             return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
 
-        private IReadOnlyList<Monster> GetRankedMonsters(Game game)
+        private bool IsMonsterInRange(Hero hero, Monster monster, int range)
         {
-            var rankedMonsters = new List<Tuple<int, Monster>>();
+            var distance = (hero.Position - monster.Position).Length();
+            return distance < range;
+        }
+
+        private IReadOnlyList<RankedMonster> GetRankedMonsters(Game game)
+        {
+            var rankedMonsters = new List<RankedMonster>();
 
             foreach (var (_, monster) in game.Monsters)
             {
                 if (monster.ThreatFor == 1)
                 {
                     var threatLevel = 0;
-                    var distance = (int)(game.MyPlayer.BasePosition - monster.Position).LengthSquared();
-                    var distanceScore = 500 * (1 / distance + 1);
+
+                    var turnsToReach = monster.GetTurnsToReach(game.MyPlayer.BasePosition);
+                    var shotsNeeded = monster.GetHitsNeeded();
+
+                    var distanceScore = 500 * (1 / turnsToReach + 1);
 
                     if (monster.TargetingBase)
                     {
@@ -96,11 +115,16 @@ namespace SpringChallenge2022.Agents
                         threatLevel = 500 + distanceScore;
                     }
 
-                    rankedMonsters.Add(new Tuple<int, Monster>(threatLevel, monster));
+                    rankedMonsters.Add(
+                        new RankedMonster(
+                            monster,
+                            threatLevel,
+                            turnsToReach,
+                            shotsNeeded));
                 }
             }
 
-            return rankedMonsters.OrderByDescending(x => x.Item1).Select(x => x.Item2).ToList();
+            return rankedMonsters.OrderByDescending(x => x.ThreatLevel).ToList();
         }
     }
 }

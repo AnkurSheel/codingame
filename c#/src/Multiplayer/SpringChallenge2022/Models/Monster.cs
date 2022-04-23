@@ -4,13 +4,14 @@ namespace SpringChallenge2022.Models
 {
     public class Monster
     {
-        private int _health;
+
         private Vector2 _speed;
 
         public int Id { get; }
 
         public Vector2 Position { get; }
 
+        public int Health { get; }
         public bool TargetingBase { get; }
 
         public int ThreatFor { get; }
@@ -25,10 +26,16 @@ namespace SpringChallenge2022.Models
         {
             Id = id;
             Position = position;
-            _health = health;
+            Health = health;
             _speed = speed;
             TargetingBase = targetingBase;
             ThreatFor = threatFor;
         }
+
+        public int GetTurnsToReach(Vector2 position)
+            => (int)((Position - position).Length() / Constants.MonsterSpeed);
+
+        public int GetHitsNeeded()
+            => Health / Constants.DamagePerHit;
     }
 }

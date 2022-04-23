@@ -8,12 +8,11 @@ using SpringChallenge2022.Models;
 
 internal class Game
 {
-    private Player _opponentPlayer;
     private int _heroesPerPlayer;
 
-    private List<Hero> _opponentHeroes;
-
     public Player MyPlayer { get; private set; }
+
+    public Player OpponentPlayer { get; private set; }
 
     public Dictionary<int, Monster> Monsters { get; private set; }
 
@@ -26,7 +25,7 @@ internal class Game
         var baseY = int.Parse(inputs[1]);
 
         MyPlayer = new Player(new Vector2(baseX, baseY));
-        _opponentPlayer = new Player(new Vector2(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
+        OpponentPlayer = new Player(new Vector2(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
 
         // heroesPerPlayer: Always 3
         _heroesPerPlayer = int.Parse(Io.ReadLine());
@@ -45,14 +44,13 @@ internal class Game
         ReInitEntities();
 
         MyPlayer.Update(myHealth, myMana, Monsters.Values.ToList());
-        _opponentPlayer.Update(oppHealth, oppMana, Monsters.Values.ToList());
+        OpponentPlayer.Update(oppHealth, oppMana, Monsters.Values.ToList());
     }
 
     private void ReInitEntities()
     {
         var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
-        _opponentHeroes = new List<Hero>(entityCount);
         Monsters = new Dictionary<int, Monster>();
 
         for (var i = 0; i < entityCount; i++)
@@ -94,7 +92,15 @@ internal class Game
 
                     break;
                 case 2:
-                    _opponentHeroes.Add(new Hero(id, new Vector2(x, y)));
+                    if (OpponentPlayer.Heroes.ContainsKey(id))
+                    {
+                        OpponentPlayer.Heroes[id].Update(new Vector2(x, y));
+                    }
+                    else
+                    {
+                        OpponentPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
+                    }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

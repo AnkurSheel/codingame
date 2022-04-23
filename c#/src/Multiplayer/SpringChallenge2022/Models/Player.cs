@@ -8,7 +8,8 @@ namespace SpringChallenge2022.Models
     public class Player
     {
         private int _health;
-        private int _mana;
+
+        public int Mana { get; private set; }
 
         public Dictionary<int, Hero> Heroes { get; } = new Dictionary<int, Hero>();
 
@@ -22,7 +23,7 @@ namespace SpringChallenge2022.Models
         public void Update(int health, int mana, IReadOnlyList<Monster> monsters)
         {
             _health = health;
-            _mana = mana;
+            Mana = mana;
 
             foreach (var hero in Heroes.Values)
             {
