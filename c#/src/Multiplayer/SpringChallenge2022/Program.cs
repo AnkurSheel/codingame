@@ -1,7 +1,7 @@
 ﻿using SpringChallenge2022.Agents;
 using SpringChallenge2022.Common.Services;
 
-internal class Player
+internal class Program
 {
     private static void Main(string[] args)
     {

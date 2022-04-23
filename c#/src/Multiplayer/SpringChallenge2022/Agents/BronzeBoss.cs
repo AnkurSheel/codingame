@@ -21,7 +21,7 @@ namespace SpringChallenge2022.Agents
             {
                 Io.Debug($"Evaluating {monster.Id}");
 
-                var heroTargetingMonster = game.MyHeroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == monster.Id);
+                var heroTargetingMonster = game.MyPlayer.Heroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == monster.Id);
 
                 if (heroTargetingMonster != null)
                 {
@@ -33,7 +33,7 @@ namespace SpringChallenge2022.Agents
                 Hero bestHero = null;
                 var bestHeroDistance = int.MaxValue;
 
-                foreach (var (_, hero) in game.MyHeroes)
+                foreach (var hero in game.MyPlayer.Heroes.Values)
                 {
                     if (hero.TargetedMonster != null)
                     {
@@ -57,7 +57,7 @@ namespace SpringChallenge2022.Agents
                 }
             }
 
-            foreach (var (_, hero) in game.MyHeroes)
+            foreach (var hero in game.MyPlayer.Heroes.Values)
             {
                 if (!actions.ContainsKey(hero.Id))
                 {
@@ -84,7 +84,7 @@ namespace SpringChallenge2022.Agents
                 if (monster.ThreatFor == 1)
                 {
                     var threatLevel = 0;
-                    var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
+                    var distance = game.MyPlayer.BasePosition.GetDistanceSquared(monster.Position);
                     var distanceScore = 500 * (1 / distance + 1);
 
                     if (monster.TargetingBase)

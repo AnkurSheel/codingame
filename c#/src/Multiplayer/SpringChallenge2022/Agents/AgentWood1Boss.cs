@@ -17,7 +17,7 @@ namespace SpringChallenge2022.Agents
 
             var rankedMonsters = GetRankedMonsters(game);
 
-            foreach (var (_, hero) in game.MyHeroes)
+            foreach (var hero in game.MyPlayer.Heroes.Values)
             {
                 if (hero.TargetedMonster != null)
                 {
@@ -90,7 +90,7 @@ namespace SpringChallenge2022.Agents
                 if (monster.ThreatFor == 1)
                 {
                     var threatLevel = 0;
-                    var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
+                    var distance = game.MyPlayer.BasePosition.GetDistanceSquared(monster.Position);
                     var distanceScore = 500 * (1 / distance + 1);
 
                     if (monster.TargetingBase)

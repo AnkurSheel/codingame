@@ -1,19 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SpringChallenge2022;
 using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
 
 internal class Game
 {
-    private Base _opponentBase;
+    private Player _opponentPlayer;
     private int _heroesPerPlayer;
 
     private List<Hero> _opponentHeroes;
 
-    public Base MyBase { get; private set; }
-
-    public Dictionary<int, Hero> MyHeroes { get; } = new Dictionary<int, Hero>();
+    public Player MyPlayer { get; private set; }
 
     public Dictionary<int, Monster> Monsters { get; private set; }
 
@@ -25,8 +24,8 @@ internal class Game
         var baseX = int.Parse(inputs[0]);
         var baseY = int.Parse(inputs[1]);
 
-        MyBase = new Base(new Vector(baseX, baseY));
-        _opponentBase = new Base(new Vector(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
+        MyPlayer = new Player(new Vector(baseX, baseY));
+        _opponentPlayer = new Player(new Vector(Constants.BottomRightMap.X - baseX, Constants.BottomRightMap.Y - baseY));
 
         // heroesPerPlayer: Always 3
         _heroesPerPlayer = int.Parse(Io.ReadLine());
@@ -44,14 +43,8 @@ internal class Game
 
         ReInitEntities();
 
-        foreach (var hero in MyHeroes.Values)
-        {
-            if (hero.TargetedMonster != null && !Monsters.ContainsKey(hero.TargetedMonster.Id))
-            {
-                Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
-                hero.TargetedMonster = null;
-            }
-        }
+        MyPlayer.Update(myHealth, myMana, Monsters.Values.ToList());
+        _opponentPlayer.Update(oppHealth, oppMana, Monsters.Values.ToList());
     }
 
     private void ReInitEntities()
@@ -89,13 +82,13 @@ internal class Game
                     Monsters.Add(id, monster);
                     break;
                 case 1:
-                    if (MyHeroes.ContainsKey(id))
+                    if (MyPlayer.Heroes.ContainsKey(id))
                     {
-                        MyHeroes[id].Update(new Vector(x, y));
+                        MyPlayer.Heroes[id].Update(new Vector(x, y));
                     }
                     else
                     {
-                        MyHeroes.Add(id, new Hero(id, new Vector(x, y)));
+                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector(x, y)));
                     }
 
                     break;
