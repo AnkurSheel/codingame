@@ -1,4 +1,4 @@
-﻿namespace SpringChallenge2022
+﻿namespace SpringChallenge2022.Models
 {
     public enum EntityType
     {

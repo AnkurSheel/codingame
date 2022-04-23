@@ -8,6 +8,6 @@
 
         public const bool IsLocalRun = false;
 
-        public const bool ShowInput = false;
+        public const bool ShowInput = true;
     }
 }

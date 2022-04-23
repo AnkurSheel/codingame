@@ -7,15 +7,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <None Remove="FinalOutput\**" />
+      <None Remove="CombineFilesCsharp.exe - Shortcut.lnk" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Compile Remove="FinalOutput\**" />
     </ItemGroup>
 
     <ItemGroup>
       <EmbeddedResource Remove="FinalOutput\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="FinalOutput\**" />
-      <None Remove="CombineFilesCsharp.exe - Shortcut.lnk" />
     </ItemGroup>
 </Project>
