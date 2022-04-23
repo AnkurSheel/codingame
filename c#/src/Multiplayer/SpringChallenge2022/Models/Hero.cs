@@ -1,6 +1,4 @@
-﻿using SpringChallenge2022.Agents;
-
-namespace SpringChallenge2022.Models
+﻿namespace SpringChallenge2022.Models
 {
     public class Hero
     {
@@ -10,7 +8,7 @@ namespace SpringChallenge2022.Models
 
         public Vector StartingPosition { get; }
 
-        public Monster TargetedMonster { get; set; }
+        public Monster? TargetedMonster { get; set; }
 
         public Hero(int id, Vector position)
         {

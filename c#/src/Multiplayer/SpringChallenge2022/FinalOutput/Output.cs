@@ -1,15 +1,15 @@
 using System;
-using SpringChallenge2022.Agents;
+using SpringChallenge2022.Models;
 using System.Collections.Generic;
 using SpringChallenge2022;
 using SpringChallenge2022.Common.Services;
-using SpringChallenge2022.Models;
+using SpringChallenge2022.Agents;
 using System.Linq;
 using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 12:29
+ // 24/04/2022 09:40
 
 
 namespace SpringChallenge2022
@@ -59,6 +59,20 @@ internal class Game
         var oppHealth = int.Parse(inputs[0]);
         var oppMana = int.Parse(inputs[1]);
 
+        ReInitEntities();
+
+        foreach (var hero in MyHeroes.Values)
+        {
+            if (hero.TargetedMonster != null && !Monsters.ContainsKey(hero.TargetedMonster.Id))
+            {
+                Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
+                hero.TargetedMonster = null;
+            }
+        }
+    }
+
+    private void ReInitEntities()
+    {
         var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
         _opponentHeroes = new List<Hero>(entityCount);
@@ -66,7 +80,7 @@ internal class Game
 
         for (var i = 0; i < entityCount; i++)
         {
-            inputs = Io.ReadLine().Split(' ');
+            var inputs = Io.ReadLine().Split(' ');
             var id = int.Parse(inputs[0]); // Unique identifier
             var type = int.Parse(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
             var x = int.Parse(inputs[2]); // Position of this entity
@@ -381,79 +395,73 @@ namespace SpringChallenge2022.Agents
 {
     internal class BronzeBoss
     {
-        private readonly HashSet<int> _targetedMonsterIds = new HashSet<int>();
-
         public IReadOnlyList<IAction> GetAction(Game game)
         {
             var actions = new Dictionary<int, IAction>();
 
             var rankedMonsters = GetRankedMonsters(game);
 
-            foreach (var (_, hero) in game.MyHeroes)
+            Io.Debug($"RankedMonsters {rankedMonsters.Count}");
+
+            foreach (var monster in rankedMonsters)
             {
-                if (hero.TargetedMonster != null)
+                Io.Debug($"Evaluating {monster.Id}");
+
+                var heroTargetingMonster = game.MyHeroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == monster.Id);
+
+                if (heroTargetingMonster != null)
                 {
-                    if (!game.Monsters.ContainsKey(hero.TargetedMonster.Id))
-                    {
-                        Io.Debug($"removing {hero.TargetedMonster.Id} for {hero.Id}");
-                        _targetedMonsterIds.Remove(hero.TargetedMonster.Id);
-                        hero.TargetedMonster = null;
-                    }
-                    else
-                    {
-                        var monster = game.Monsters[hero.TargetedMonster.Id];
-                        Io.Debug($"hero {hero.Id} already targeted {monster.Id}");
-                        actions.Add(hero.Id, new MoveAction(monster.Position));
-                        continue;
-                    }
+                    Io.Debug($"hero {heroTargetingMonster.Id} already targeted {monster.Id}");
+                    actions.Add(heroTargetingMonster.Id, new MoveAction(monster.Position));
+                    continue;
                 }
 
-                Monster bestMonster = null;
-                var bestMonsterDistance = int.MaxValue;
+                Hero bestHero = null;
+                var bestHeroDistance = int.MaxValue;
 
-                foreach (var (_, monster) in rankedMonsters)
+                foreach (var (_, hero) in game.MyHeroes)
                 {
-                    if (_targetedMonsterIds.Contains(monster.Id))
+                    if (hero.TargetedMonster != null)
                     {
-                        Io.Debug($"Monster {monster.Id} already targeted");
                         continue;
                     }
 
                     var distance = hero.Position.GetDistanceSquared(monster.Position);
 
-                    if (distance < bestMonsterDistance)
+                    if (distance < bestHeroDistance)
                     {
-                        bestMonsterDistance = distance;
-                        bestMonster = monster;
+                        bestHeroDistance = distance;
+                        bestHero = hero;
                     }
                 }
 
-                if (bestMonster != null)
+                if (bestHero != null)
                 {
-                    _targetedMonsterIds.Add(bestMonster.Id);
-                    hero.TargetedMonster = bestMonster;
-                    Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
-                    actions.Add(hero.Id, new MoveAction(bestMonster.Position));
+                    bestHero.TargetedMonster = monster;
+                    Io.Debug($"hero {bestHero.Id} targeting {bestHero.TargetedMonster.Id}");
+                    actions.Add(bestHero.Id, new MoveAction(monster.Position));
                 }
-                else
+            }
+
+            foreach (var (_, hero) in game.MyHeroes)
+            {
+                if (!actions.ContainsKey(hero.Id))
                 {
                     if (rankedMonsters.Any())
                     {
-                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Item2.Position));
+                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Position));
                     }
                     else
                     {
                         actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
                     }
-
-                    // actions.Add(new MoveAction(new Vector(Constants.RandomGenerator.Next(5000), Constants.RandomGenerator.Next(5000))));
                 }
             }
 
             return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
 
-        private IReadOnlyList<Tuple<int, Monster>> GetRankedMonsters(Game game)
+        private IReadOnlyList<Monster> GetRankedMonsters(Game game)
         {
             var rankedMonsters = new List<Tuple<int, Monster>>();
 
@@ -476,34 +484,9 @@ namespace SpringChallenge2022.Agents
 
                     rankedMonsters.Add(new Tuple<int, Monster>(threatLevel, monster));
                 }
-
-                rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
             }
 
-            return rankedMonsters;
-        }
-    }
-}
-namespace SpringChallenge2022.Agents
-{
-    public class Vector
-    {
-        public int X { get; }
-
-        public int Y { get; }
-
-        public Vector(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-
-        public int GetDistanceSquared(Vector other)
-        {
-            var dX = X - other.X;
-            var dY = Y - other.Y;
-            var distance = dX * dX + dY * dY;
-            return distance;
+            return rankedMonsters.OrderByDescending(x => x.Item1).Select(x => x.Item2).ToList();
         }
     }
 }
@@ -511,13 +494,13 @@ namespace SpringChallenge2022.Common
 {
     public static class Constants
     {
-        public const bool IsDebugOn = false;
+        public const bool IsDebugOn = true;
 
         public const bool IsForInput = false;
 
         public const bool IsLocalRun = false;
 
-        public const bool ShowInput = false;
+        public const bool ShowInput = true;
     }
 }
 
@@ -533,7 +516,6 @@ namespace SpringChallenge2022.Models
         }
     }
 }
-
 namespace SpringChallenge2022.Models
 {
     public class Hero
@@ -544,7 +526,7 @@ namespace SpringChallenge2022.Models
 
         public Vector StartingPosition { get; }
 
-        public Monster TargetedMonster { get; set; }
+        public Monster? TargetedMonster { get; set; }
 
         public Hero(int id, Vector position)
         {
@@ -592,6 +574,29 @@ namespace SpringChallenge2022.Models
             _speed = speed;
             TargetingBase = targetingBase;
             ThreatFor = threatFor;
+        }
+    }
+}
+namespace SpringChallenge2022.Models
+{
+    public class Vector
+    {
+        public int X { get; }
+
+        public int Y { get; }
+
+        public Vector(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public int GetDistanceSquared(Vector other)
+        {
+            var dX = X - other.X;
+            var dY = Y - other.Y;
+            var distance = dX * dX + dY * dY;
+            return distance;
         }
     }
 }

@@ -1,4 +1,4 @@
-using SpringChallenge2022.Agents;
+using SpringChallenge2022.Models;
 
 namespace SpringChallenge2022.Actions
 {

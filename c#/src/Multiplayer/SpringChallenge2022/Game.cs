@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using SpringChallenge2022;
-using SpringChallenge2022.Agents;
 using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
 
@@ -43,6 +42,20 @@ internal class Game
         var oppHealth = int.Parse(inputs[0]);
         var oppMana = int.Parse(inputs[1]);
 
+        ReInitEntities();
+
+        foreach (var hero in MyHeroes.Values)
+        {
+            if (hero.TargetedMonster != null && !Monsters.ContainsKey(hero.TargetedMonster.Id))
+            {
+                Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
+                hero.TargetedMonster = null;
+            }
+        }
+    }
+
+    private void ReInitEntities()
+    {
         var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
         _opponentHeroes = new List<Hero>(entityCount);
@@ -50,7 +63,7 @@ internal class Game
 
         for (var i = 0; i < entityCount; i++)
         {
-            inputs = Io.ReadLine().Split(' ');
+            var inputs = Io.ReadLine().Split(' ');
             var id = int.Parse(inputs[0]); // Unique identifier
             var type = int.Parse(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
             var x = int.Parse(inputs[2]); // Position of this entity

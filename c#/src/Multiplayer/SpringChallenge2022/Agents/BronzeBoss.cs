@@ -9,79 +9,73 @@ namespace SpringChallenge2022.Agents
 {
     internal class BronzeBoss
     {
-        private readonly HashSet<int> _targetedMonsterIds = new HashSet<int>();
-
         public IReadOnlyList<IAction> GetAction(Game game)
         {
             var actions = new Dictionary<int, IAction>();
 
             var rankedMonsters = GetRankedMonsters(game);
 
-            foreach (var (_, hero) in game.MyHeroes)
+            Io.Debug($"RankedMonsters {rankedMonsters.Count}");
+
+            foreach (var monster in rankedMonsters)
             {
-                if (hero.TargetedMonster != null)
+                Io.Debug($"Evaluating {monster.Id}");
+
+                var heroTargetingMonster = game.MyHeroes.Values.SingleOrDefault(x => x.TargetedMonster?.Id == monster.Id);
+
+                if (heroTargetingMonster != null)
                 {
-                    if (!game.Monsters.ContainsKey(hero.TargetedMonster.Id))
-                    {
-                        Io.Debug($"removing {hero.TargetedMonster.Id} for {hero.Id}");
-                        _targetedMonsterIds.Remove(hero.TargetedMonster.Id);
-                        hero.TargetedMonster = null;
-                    }
-                    else
-                    {
-                        var monster = game.Monsters[hero.TargetedMonster.Id];
-                        Io.Debug($"hero {hero.Id} already targeted {monster.Id}");
-                        actions.Add(hero.Id, new MoveAction(monster.Position));
-                        continue;
-                    }
+                    Io.Debug($"hero {heroTargetingMonster.Id} already targeted {monster.Id}");
+                    actions.Add(heroTargetingMonster.Id, new MoveAction(monster.Position));
+                    continue;
                 }
 
-                Monster bestMonster = null;
-                var bestMonsterDistance = int.MaxValue;
+                Hero bestHero = null;
+                var bestHeroDistance = int.MaxValue;
 
-                foreach (var (_, monster) in rankedMonsters)
+                foreach (var (_, hero) in game.MyHeroes)
                 {
-                    if (_targetedMonsterIds.Contains(monster.Id))
+                    if (hero.TargetedMonster != null)
                     {
-                        Io.Debug($"Monster {monster.Id} already targeted");
                         continue;
                     }
 
                     var distance = hero.Position.GetDistanceSquared(monster.Position);
 
-                    if (distance < bestMonsterDistance)
+                    if (distance < bestHeroDistance)
                     {
-                        bestMonsterDistance = distance;
-                        bestMonster = monster;
+                        bestHeroDistance = distance;
+                        bestHero = hero;
                     }
                 }
 
-                if (bestMonster != null)
+                if (bestHero != null)
                 {
-                    _targetedMonsterIds.Add(bestMonster.Id);
-                    hero.TargetedMonster = bestMonster;
-                    Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
-                    actions.Add(hero.Id, new MoveAction(bestMonster.Position));
+                    bestHero.TargetedMonster = monster;
+                    Io.Debug($"hero {bestHero.Id} targeting {bestHero.TargetedMonster.Id}");
+                    actions.Add(bestHero.Id, new MoveAction(monster.Position));
                 }
-                else
+            }
+
+            foreach (var (_, hero) in game.MyHeroes)
+            {
+                if (!actions.ContainsKey(hero.Id))
                 {
                     if (rankedMonsters.Any())
                     {
-                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Item2.Position));
+                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Position));
                     }
                     else
                     {
                         actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
                     }
-
-                    // actions.Add(new MoveAction(new Vector(Constants.RandomGenerator.Next(5000), Constants.RandomGenerator.Next(5000))));
                 }
             }
 
             return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
 
-        private IReadOnlyList<Tuple<int, Monster>> GetRankedMonsters(Game game)
+        private IReadOnlyList<Monster> GetRankedMonsters(Game game)
         {
             var rankedMonsters = new List<Tuple<int, Monster>>();
 
@@ -104,11 +98,9 @@ namespace SpringChallenge2022.Agents
 
                     rankedMonsters.Add(new Tuple<int, Monster>(threatLevel, monster));
                 }
-
-                rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
             }
 
-            return rankedMonsters;
+            return rankedMonsters.OrderByDescending(x => x.Item1).Select(x => x.Item2).ToList();
         }
     }
 }
