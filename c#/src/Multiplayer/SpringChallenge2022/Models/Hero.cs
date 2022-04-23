@@ -16,7 +16,10 @@ namespace SpringChallenge2022.Models
         {
             Id = id;
             Position = position;
-            StartingPosition = position;
+
+            StartingPosition = position.X > 8000
+                ? new Vector(Constants.BottomRightMap.X - 3500, Constants.BottomRightMap.Y - 3500)
+                : new Vector(3500, 3500);
         }
 
         public void Update(Vector position)

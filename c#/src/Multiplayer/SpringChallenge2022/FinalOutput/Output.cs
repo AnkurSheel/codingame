@@ -9,7 +9,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 23/04/2022 11:45
+ // 24/04/2022 12:29
 
 
 namespace SpringChallenge2022
@@ -68,7 +68,7 @@ internal class Game
         {
             inputs = Io.ReadLine().Split(' ');
             var id = int.Parse(inputs[0]); // Unique identifier
-            var type = Enum.Parse<EntityType>(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
+            var type = int.Parse(inputs[1]); // 0=monster, 1=your hero, 2=opponent hero
             var x = int.Parse(inputs[2]); // Position of this entity
             var y = int.Parse(inputs[3]);
             var shieldLife = int.Parse(inputs[4]); // Ignore for this league; Count down until shield spell fades
@@ -81,7 +81,7 @@ internal class Game
 
             switch (type)
             {
-                case EntityType.MONSTER:
+                case 0:
                     var monster = new Monster(
                         id,
                         new Vector(x, y),
@@ -91,10 +91,10 @@ internal class Game
                         threatFor);
                     Monsters.Add(id, monster);
                     break;
-                case EntityType.HERO:
+                case 1:
                     if (MyHeroes.ContainsKey(id))
                     {
-                        MyHeroes[id].UpdatePosition(new Vector(x, y));
+                        MyHeroes[id].Update(new Vector(x, y));
                     }
                     else
                     {
@@ -102,7 +102,7 @@ internal class Game
                     }
 
                     break;
-                case EntityType.OPPONENT_HERO:
+                case 2:
                     _opponentHeroes.Add(new Hero(id, new Vector(x, y)));
                     break;
                 default:
@@ -119,7 +119,7 @@ internal class Player
         Io.Initialize();
 
         var game = new Game();
-        var agent = new AgentWood1Boss();
+        var agent = new BronzeBoss();
 
         game.Initialize();
 
@@ -134,6 +134,25 @@ internal class Player
                 Io.WriteLine(action.GetOutputAction());
             }
         }
+    }
+}
+
+namespace SpringChallenge2022.Actions
+{
+    public class ControlSpellAction : IAction
+    {
+        private const int Range = 2200;
+        private readonly int _id;
+        private readonly Vector _targetPosition;
+
+        public ControlSpellAction(int id, Vector targetPosition)
+        {
+            _id = id;
+            _targetPosition = targetPosition;
+        }
+
+        public string GetOutputAction()
+            => $"SPELL CONTROL {_id} {_targetPosition.X} {_targetPosition.Y}";
     }
 }
 namespace SpringChallenge2022.Actions
@@ -161,6 +180,22 @@ namespace SpringChallenge2022.Actions
 }
 namespace SpringChallenge2022.Actions
 {
+    public class ShieldSpellAction : IAction
+    {
+        private readonly int _id;
+        private const int Range = 2200;
+
+        public ShieldSpellAction(int id)
+        {
+            _id = id;
+        }
+
+        public string GetOutputAction()
+            => $"SPELL SHIELD {_id}";
+    }
+}
+namespace SpringChallenge2022.Actions
+{
     internal class WaitAction : IAction
     {
         public string GetOutputAction()
@@ -172,6 +207,7 @@ namespace SpringChallenge2022.Actions
 {
     public class WindSpellAction : IAction
     {
+        private const int Range = 1280;
         private readonly Vector _targetPosition;
 
         public WindSpellAction(Vector targetPosition)
@@ -300,7 +336,7 @@ namespace SpringChallenge2022.Agents
         {
             var actions = new List<IAction>();
 
-            var rankedMonsters = new List<Tuple<int, Entity>>();
+            var rankedMonsters = new List<Tuple<int, Monster>>();
 
             foreach (var (_, monster) in game.Monsters)
             {
@@ -318,7 +354,7 @@ namespace SpringChallenge2022.Agents
                 var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
                 var distanceScore = 500 * (1 / distance + 1);
 
-                rankedMonsters.Add(new Tuple<int, Entity>(threatLevel + distanceScore, monster));
+                rankedMonsters.Add(new Tuple<int, Monster>(threatLevel + distanceScore, monster));
             }
 
             rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
@@ -337,6 +373,114 @@ namespace SpringChallenge2022.Agents
             }
 
             return actions;
+        }
+    }
+}
+
+namespace SpringChallenge2022.Agents
+{
+    internal class BronzeBoss
+    {
+        private readonly HashSet<int> _targetedMonsterIds = new HashSet<int>();
+
+        public IReadOnlyList<IAction> GetAction(Game game)
+        {
+            var actions = new Dictionary<int, IAction>();
+
+            var rankedMonsters = GetRankedMonsters(game);
+
+            foreach (var (_, hero) in game.MyHeroes)
+            {
+                if (hero.TargetedMonster != null)
+                {
+                    if (!game.Monsters.ContainsKey(hero.TargetedMonster.Id))
+                    {
+                        Io.Debug($"removing {hero.TargetedMonster.Id} for {hero.Id}");
+                        _targetedMonsterIds.Remove(hero.TargetedMonster.Id);
+                        hero.TargetedMonster = null;
+                    }
+                    else
+                    {
+                        var monster = game.Monsters[hero.TargetedMonster.Id];
+                        Io.Debug($"hero {hero.Id} already targeted {monster.Id}");
+                        actions.Add(hero.Id, new MoveAction(monster.Position));
+                        continue;
+                    }
+                }
+
+                Monster bestMonster = null;
+                var bestMonsterDistance = int.MaxValue;
+
+                foreach (var (_, monster) in rankedMonsters)
+                {
+                    if (_targetedMonsterIds.Contains(monster.Id))
+                    {
+                        Io.Debug($"Monster {monster.Id} already targeted");
+                        continue;
+                    }
+
+                    var distance = hero.Position.GetDistanceSquared(monster.Position);
+
+                    if (distance < bestMonsterDistance)
+                    {
+                        bestMonsterDistance = distance;
+                        bestMonster = monster;
+                    }
+                }
+
+                if (bestMonster != null)
+                {
+                    _targetedMonsterIds.Add(bestMonster.Id);
+                    hero.TargetedMonster = bestMonster;
+                    Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
+                    actions.Add(hero.Id, new MoveAction(bestMonster.Position));
+                }
+                else
+                {
+                    if (rankedMonsters.Any())
+                    {
+                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Item2.Position));
+                    }
+                    else
+                    {
+                        actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
+                    }
+
+                    // actions.Add(new MoveAction(new Vector(Constants.RandomGenerator.Next(5000), Constants.RandomGenerator.Next(5000))));
+                }
+            }
+
+            return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private IReadOnlyList<Tuple<int, Monster>> GetRankedMonsters(Game game)
+        {
+            var rankedMonsters = new List<Tuple<int, Monster>>();
+
+            foreach (var (_, monster) in game.Monsters)
+            {
+                if (monster.ThreatFor == 1)
+                {
+                    var threatLevel = 0;
+                    var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
+                    var distanceScore = 500 * (1 / distance + 1);
+
+                    if (monster.TargetingBase)
+                    {
+                        threatLevel = 1000 + distanceScore;
+                    }
+                    else
+                    {
+                        threatLevel = 500 + distanceScore;
+                    }
+
+                    rankedMonsters.Add(new Tuple<int, Monster>(threatLevel, monster));
+                }
+
+                rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
+            }
+
+            return rankedMonsters;
         }
     }
 }
@@ -392,56 +536,43 @@ namespace SpringChallenge2022.Models
 
 namespace SpringChallenge2022.Models
 {
-    public abstract class Entity
+    public class Hero
     {
         public int Id { get; }
 
         public Vector Position { get; private set; }
 
-        protected Entity(int id, Vector position)
-        {
-            Id = id;
-            Position = position;
-        }
-
-        public void UpdatePosition(Vector position)
-        {
-            Position = position;
-        }
-    }
-}
-namespace SpringChallenge2022.Models
-{
-    public enum EntityType
-    {
-        MONSTER = 0,
-        HERO = 1,
-        OPPONENT_HERO = 2
-    }
-}
-
-namespace SpringChallenge2022.Models
-{
-    public class Hero : Entity
-    {
         public Vector StartingPosition { get; }
 
         public Monster TargetedMonster { get; set; }
 
-        public Hero(int id, Vector position) : base(id, position)
+        public Hero(int id, Vector position)
         {
-            StartingPosition = position;
+            Id = id;
+            Position = position;
+
+            StartingPosition = position.X > 8000
+                ? new Vector(Constants.BottomRightMap.X - 3500, Constants.BottomRightMap.Y - 3500)
+                : new Vector(3500, 3500);
         }
 
+        public void Update(Vector position)
+        {
+            Position = position;
+        }
     }
 }
 
 namespace SpringChallenge2022.Models
 {
-    public class Monster : Entity
+    public class Monster
     {
         private int _health;
         private Vector _speed;
+
+        public int Id { get; }
+
+        public Vector Position { get; private set; }
 
         public bool TargetingBase { get; }
 
@@ -453,8 +584,10 @@ namespace SpringChallenge2022.Models
             int health,
             Vector speed,
             bool targetingBase,
-            int threatFor) : base(id, position)
+            int threatFor)
         {
+            Id = id;
+            Position = position;
             _health = health;
             _speed = speed;
             TargetingBase = targetingBase;
