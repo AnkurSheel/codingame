@@ -4,13 +4,18 @@ namespace SpringChallenge2022.Models
 {
     public abstract class Entity
     {
-        private int _id;
+        public int Id { get; }
 
-        public Vector Position { get; }
+        public Vector Position { get; private set; }
 
         protected Entity(int id, Vector position)
         {
-            _id = id;
+            Id = id;
+            Position = position;
+        }
+
+        public void UpdatePosition(Vector position)
+        {
             Position = position;
         }
     }

@@ -2,53 +2,113 @@
 using System.Collections.Generic;
 using System.Linq;
 using SpringChallenge2022.Actions;
+using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
 
 namespace SpringChallenge2022.Agents
 {
     internal class AgentWood1Boss
     {
+        private readonly HashSet<int> _targetedMonsterIds = new HashSet<int>();
+
         public IReadOnlyList<IAction> GetAction(Game game)
         {
-            var actions = new List<IAction>();
+            var actions = new Dictionary<int, IAction>();
 
-            var rankedMonsters = new List<Tuple<int, Entity>>();
+            var rankedMonsters = GetRankedMonsters(game);
 
-            foreach (var monster in game.Monsters)
+            foreach (var (_, hero) in game.MyHeroes)
             {
-                var threatLevel = 0;
-
-                if (monster.TargetingBase && monster.ThreatFor == 1)
+                if (hero.TargetedMonster != null)
                 {
-                    threatLevel = 1000;
+                    if (!game.Monsters.ContainsKey(hero.TargetedMonster.Id))
+                    {
+                        Io.Debug($"removing {hero.TargetedMonster.Id} for {hero.Id}");
+                        _targetedMonsterIds.Remove(hero.TargetedMonster.Id);
+                        hero.TargetedMonster = null;
+                    }
+                    else
+                    {
+                        var monster = game.Monsters[hero.TargetedMonster.Id];
+                        Io.Debug($"hero {hero.Id} already targeted {monster.Id}");
+                        actions.Add(hero.Id, new MoveAction(monster.Position));
+                        continue;
+                    }
                 }
-                else if (monster.ThreatFor == 1)
+
+                Monster bestMonster = null;
+                var bestMonsterDistance = int.MaxValue;
+
+                foreach (var (_, monster) in rankedMonsters)
                 {
-                    threatLevel = 500;
+                    if (_targetedMonsterIds.Contains(monster.Id))
+                    {
+                        Io.Debug($"Monster {monster.Id} already targeted");
+                        continue;
+                    }
+
+                    var distance = hero.Position.GetDistanceSquared(monster.Position);
+
+                    if (distance < bestMonsterDistance)
+                    {
+                        bestMonsterDistance = distance;
+                        bestMonster = monster;
+                    }
                 }
 
-                var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
-                var distanceScore = 500 * (1 / distance + 1);
-
-                rankedMonsters.Add(new Tuple<int, Entity>(threatLevel + distanceScore, monster));
-            }
-
-            rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
-
-            for (var index = 0; index < game.MyHeroes.Count; index++)
-            {
-                if (rankedMonsters.Count > index)
+                if (bestMonster != null)
                 {
-                    var monster = rankedMonsters[index].Item2;
-                    actions.Add(new MoveAction(monster.Position));
+                    _targetedMonsterIds.Add(bestMonster.Id);
+                    hero.TargetedMonster = bestMonster;
+                    Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
+                    actions.Add(hero.Id, new MoveAction(bestMonster.Position));
                 }
                 else
                 {
-                    actions.Add(new WaitAction());
+                    if (rankedMonsters.Any())
+                    {
+                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Item2.Position));
+                    }
+                    else
+                    {
+                        actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
+                    }
+
+                    // actions.Add(new MoveAction(new Vector(Constants.RandomGenerator.Next(5000), Constants.RandomGenerator.Next(5000))));
                 }
             }
 
-            return actions;
+            return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private IReadOnlyList<Tuple<int, Monster>> GetRankedMonsters(Game game)
+        {
+            var rankedMonsters = new List<Tuple<int, Monster>>();
+
+            foreach (var (_, monster) in game.Monsters)
+            {
+                if (monster.ThreatFor == 1)
+                {
+                    var threatLevel = 0;
+                    var distance = game.MyBase.Position.GetDistanceSquared(monster.Position);
+                    var distanceScore = 500 * (1 / distance + 1);
+
+                    if (monster.TargetingBase)
+                    {
+                        threatLevel = 1000 + distanceScore;
+                    }
+                    else
+                    {
+                        threatLevel = 500 + distanceScore;
+                    }
+
+                    rankedMonsters.Add(new Tuple<int, Monster>(threatLevel, monster));
+                }
+
+                rankedMonsters = rankedMonsters.OrderByDescending(x => x.Item1).ToList();
+            }
+
+            return rankedMonsters;
         }
     }
 }

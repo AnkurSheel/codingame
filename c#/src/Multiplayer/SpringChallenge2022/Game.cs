@@ -14,9 +14,9 @@ internal class Game
 
     public Base MyBase { get; private set; }
 
-    public List<Hero> MyHeroes { get; private set; }
+    public Dictionary<int, Hero> MyHeroes { get; } = new Dictionary<int, Hero>();
 
-    public List<Monster> Monsters { get; private set; }
+    public Dictionary<int, Monster> Monsters { get; private set; }
 
     public void Initialize()
     {
@@ -45,9 +45,8 @@ internal class Game
 
         var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
-        MyHeroes = new List<Hero>(entityCount);
         _opponentHeroes = new List<Hero>(entityCount);
-        Monsters = new List<Monster>(entityCount);
+        Monsters = new Dictionary<int, Monster>();
 
         for (var i = 0; i < entityCount; i++)
         {
@@ -74,10 +73,18 @@ internal class Game
                         new Vector(vx, vy),
                         nearBase == 1,
                         threatFor);
-                    Monsters.Add(monster);
+                    Monsters.Add(id, monster);
                     break;
                 case EntityType.HERO:
-                    MyHeroes.Add(new Hero(id, new Vector(x, y)));
+                    if (MyHeroes.ContainsKey(id))
+                    {
+                        MyHeroes[id].UpdatePosition(new Vector(x, y));
+                    }
+                    else
+                    {
+                        MyHeroes.Add(id, new Hero(id, new Vector(x, y)));
+                    }
+
                     break;
                 case EntityType.OPPONENT_HERO:
                     _opponentHeroes.Add(new Hero(id, new Vector(x, y)));

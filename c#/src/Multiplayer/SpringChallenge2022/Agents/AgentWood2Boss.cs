@@ -14,7 +14,7 @@ namespace SpringChallenge2022.Agents
 
             var rankedMonsters = new List<Tuple<int, Entity>>();
 
-            foreach (var monster in game.Monsters)
+            foreach (var (_, monster) in game.Monsters)
             {
                 var threatLevel = 0;
 

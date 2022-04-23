@@ -2,12 +2,12 @@
 {
     public static class Constants
     {
-        public const bool IsDebugOn = true;
+        public const bool IsDebugOn = false;
 
         public const bool IsForInput = false;
 
         public const bool IsLocalRun = false;
 
-        public const bool ShowInput = true;
+        public const bool ShowInput = false;
     }
 }
