@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace FallChallenge2020.Services
+namespace SpringChallenge2021.Common.Services
 {
     public static class Io
     {
@@ -17,7 +17,7 @@ namespace FallChallenge2020.Services
 
         public static void Debug(string output)
         {
-            if (Constants.IsDebugOn || Constants.IsForInput)
+            if (Constants.IsDebugOn || Constants.IsForInput || Constants.ShowInput)
             {
                 Console.Error.WriteLine(output);
             }
@@ -44,7 +44,7 @@ namespace FallChallenge2020.Services
                     Debug(input);
                     Debug("/IN");
                 }
-                else
+                else if(Constants.ShowInput)
                 {
                     Debug(input);
                 }
