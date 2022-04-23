@@ -19,16 +19,12 @@ namespace SpringChallenge2022.Models
             Position = position;
 
             var direction = position.X > 8000
-                ? new Vector2(Constants.BottomRightMap.X - position.X, Constants.BottomRightMap.Y - position.Y)
+                ? new Vector2(position.X - Constants.BottomRightMap.X, position.Y - Constants.BottomRightMap.Y)
                 : new Vector2(position.X, position.Y);
 
-            direction = direction / direction.Length();
+            direction /= direction.Length();
 
-            Io.Debug($"Direction {id} - {direction.X}, {direction.Y}");
-
-            StartingPosition = position.X > 8000
-                ? new Vector2(Constants.BottomRightMap.X - 3500, Constants.BottomRightMap.Y - 3500)
-                : new Vector2(3500, 3500);
+            StartingPosition = position + direction * 3500;
         }
 
         //17000 -position.x

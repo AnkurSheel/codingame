@@ -1,5 +1,4 @@
 using System.Numerics;
-using SpringChallenge2022.Models;
 
 namespace SpringChallenge2022.Actions
 {
@@ -13,6 +12,6 @@ namespace SpringChallenge2022.Actions
         }
 
         public string GetOutputAction()
-            => $"MOVE {_position.X} {_position.Y}";
+            => $"MOVE {(int)_position.X} {(int)_position.Y}";
     }
 }
