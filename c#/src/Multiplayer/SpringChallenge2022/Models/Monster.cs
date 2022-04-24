@@ -34,7 +34,7 @@ namespace SpringChallenge2022.Models
         }
 
         public int GetTurnsToReach(Vector2 position)
-            => (int)((Position - position).Length() / Constants.MonsterSpeed);
+            => (int)(((Position - position).Length() - Constants.MonsterBaseDistanceForDamage) / Constants.MonsterSpeed);
 
         public int GetHitsNeeded()
         {
