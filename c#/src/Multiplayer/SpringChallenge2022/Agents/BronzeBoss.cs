@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using SpringChallenge2022.Actions;
 using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
@@ -24,6 +23,7 @@ namespace SpringChallenge2022.Agents
             {
                 Io.Debug($"MonsterID: {monster.Id}");
             }
+
             var rankedMonsters = GetRankedMonsters();
 
             if (rankedMonsters.Count > Constants.NumberOfHeroes)
@@ -96,34 +96,38 @@ namespace SpringChallenge2022.Agents
             return rankedMonsters.OrderByDescending(x => x.ThreatLevel).ToList();
         }
 
-        private bool IsMonsterInRange(Hero hero, Monster monster, int range)
+        private bool IsMonsterInRange(
+            Hero hero,
+            Monster monster,
+            int range,
+            int minDistance)
         {
             var distance = (hero.Position - monster.Position).Length();
-            return distance < range;
+            return distance < range && distance > minDistance;
         }
 
-        private IAction GetActionIfHeroAlreadyTargetingMonster(Hero hero, RankedMonster rankedMonster)
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Hero hero, RankedMonster targetedMonster)
         {
-            Io.Debug($"hero {hero.Id} already targeted {rankedMonster.Monster.Id}");
+            Io.Debug($"hero {hero.Id} already targeted {targetedMonster.Monster.Id}");
 
-            var spellAction = GetSpellAction(hero, rankedMonster);
+            var spellAction = GetSpellAction(hero, targetedMonster);
 
-            return spellAction ?? new MoveAction(rankedMonster.Monster.Position);
+            return spellAction ?? new MoveAction(targetedMonster.Monster.Position);
         }
 
-        private IAction? GetSpellAction(Hero hero, RankedMonster rankedMonster)
+        private IAction? GetSpellAction(Hero hero, RankedMonster targetedMonster)
         {
-            if (CanCastWindSpell(hero, rankedMonster))
+            if (CanCastWindSpell(hero, targetedMonster))
             {
                 return GetSpellAction(SpellType.Wind, null);
             }
-            else if (CanCastControlSpell(hero, rankedMonster.Monster))
+            else if (CanCastControlSpell(hero, targetedMonster.Monster))
             {
-                var distance = (rankedMonster.Monster.Position - _game.MyPlayer.BasePosition).Length();
+                var distance = (targetedMonster.Monster.Position - _game.MyPlayer.BasePosition).Length();
 
                 if (distance > Constants.BaseRadius)
                 {
-                    return GetSpellAction(SpellType.Control, rankedMonster.Monster);
+                    return GetSpellAction(SpellType.Control, targetedMonster.Monster);
                 }
             }
 
@@ -148,10 +152,22 @@ namespace SpringChallenge2022.Agents
         }
 
         private bool CanCastWindSpell(Hero hero, RankedMonster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
+            => _availableMana >= Constants.ManaRequiredForSpell
+            && rankedMonster.Monster.TargetingBase
+            && IsMonsterInRange(
+                hero,
+                rankedMonster.Monster,
+                Constants.WindSpellRange,
+                0);
 
         private bool CanCastControlSpell(Hero hero, Monster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange) && !rankedMonster.ControlledByMe;
+            => _availableMana >= Constants.ManaRequiredForSpell
+                && IsMonsterInRange(
+                    hero,
+                    rankedMonster,
+                    Constants.ControlSpellRange,
+                    Constants.HeroDamageDistance)
+                && !rankedMonster.ControlledByMe;
 
         private Hero GetHeroToTargetMonster(RankedMonster rankedMonster)
         {
@@ -179,7 +195,7 @@ namespace SpringChallenge2022.Agents
 
         private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
         {
-            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
+            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && IsMonsterValidForWildMana(monster)).ToList();
 
             foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
@@ -255,11 +271,17 @@ namespace SpringChallenge2022.Agents
             }
         }
 
-        private bool IsMonsterValidForWildMana(Vector2 basePosition, Monster monster)
+        private bool IsMonsterValidForWildMana(Monster monster)
         {
-            var distance = (monster.Position - basePosition).Length();
-            Io.Debug($"Monster Id {monster.Id} :  Distance {distance}");
+            var distance = GetDistanceFromBase(monster);
             return distance > Constants.BaseRadius && distance < Constants.MaxDistanceFromBaseForHero;
+        }
+
+        private float GetDistanceFromBase(Monster monster)
+        {
+            var distance = (monster.Position - _game.MyPlayer.BasePosition).Length();
+            Io.Debug($"Monster Id {monster.Id} :  Distance {distance}");
+            return distance;
         }
     }
 }
