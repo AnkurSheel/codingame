@@ -25,12 +25,30 @@ namespace SpringChallenge2022.Models
             _health = health;
             Mana = mana;
 
+            RemoveTargetedMonsterForHeroes(monsters);
+        }
+
+        private void RemoveTargetedMonsterForHeroes(IReadOnlyList<Monster> monsters)
+        {
             foreach (var hero in Heroes.Values)
             {
-                if (hero.TargetedMonster != null && monsters.All(x => x.Id != hero.TargetedMonster.Id))
+                if (hero.TargetedMonster != null)
                 {
-                    Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
-                    hero.TargetedMonster = null;
+                    if (monsters.All(x => x.Id != hero.TargetedMonster.Id))
+                    {
+                        Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
+                        hero.TargetedMonster = null;
+                    }
+                    else
+                    {
+                        var monster = monsters.Single(x => x.Id == hero.TargetedMonster.Id);
+
+                        if (monster.ThreatFor != 1)
+                        {
+                            Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id} because its not threat for base anymore");
+                            hero.TargetedMonster = null;
+                        }
+                    }
                 }
             }
         }
