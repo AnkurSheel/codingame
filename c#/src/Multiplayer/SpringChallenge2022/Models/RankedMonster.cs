@@ -1,4 +1,6 @@
-﻿namespace SpringChallenge2022.Models
+﻿using System.Collections.Generic;
+
+namespace SpringChallenge2022.Models
 {
     public class RankedMonster
     {
@@ -20,6 +22,25 @@
             ThreatLevel = threatLevel;
             TurnsToReach = turnsToReach;
             ShotsNeeded = shotsNeeded;
+        }
+
+        public Hero GetClosestHero(IReadOnlyList<Hero> heroes)
+        {
+            Hero bestHero = null;
+            var bestHeroDistance = float.MaxValue;
+
+            foreach (var hero in heroes)
+            {
+                var distance = hero.Position.GetDistance(Monster.Position);
+
+                if (distance < bestHeroDistance)
+                {
+                    bestHeroDistance = distance;
+                    bestHero = hero;
+                }
+            }
+
+            return bestHero;
         }
 
         public override string ToString()

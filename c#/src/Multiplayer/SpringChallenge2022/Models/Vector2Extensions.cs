@@ -12,6 +12,9 @@ namespace SpringChallenge2022.Models
             return (360 + Math.Round(degrees)) % 360;
         }
 
+        public static float GetDistance(this Vector2 position, Vector2 other)
+            => (position - other).Length();
+
         public static Vector2 GetDirection(float degree)
         {
             var radians = degree * Math.PI / 180;

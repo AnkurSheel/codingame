@@ -46,7 +46,7 @@ namespace SpringChallenge2022.Agents
                 }
                 else
                 {
-                    var hero = GetHeroToTargetMonster(rankedMonster);
+                    var hero = rankedMonster.GetClosestHero(_game.MyPlayer.Heroes.Values.Where(x => !_actions.ContainsKey(x.Id)).ToList());
 
                     if (hero != null)
                     {
@@ -60,6 +60,112 @@ namespace SpringChallenge2022.Agents
             AddActionsForHeroesWithoutAction(rankedMonsters.Select(x => x.Monster).ToList());
 
             return _actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Hero hero, RankedMonster targetedMonster)
+        {
+            Io.Debug($"hero {hero.Id} already targeted {targetedMonster.Monster.Id}");
+
+            var spellAction = GetSpellActionForTargetedMonster(hero, targetedMonster);
+
+            return spellAction ?? new MoveAction(targetedMonster.Monster.Position);
+        }
+
+        private IAction? GetSpellActionForTargetedMonster(Hero hero, RankedMonster targetedMonster)
+        {
+            if (hero.CanCastWindSpell(_availableMana, targetedMonster))
+            {
+                return GetSpellAction(SpellType.Wind, null);
+            }
+            else if (hero.CanCastControlSpell(_availableMana, targetedMonster.Monster))
+            {
+                var distance = targetedMonster.Monster.Position.GetDistance(_game.MyPlayer.BasePosition);
+
+                if (distance > Constants.BaseRadius)
+                {
+                    return GetSpellAction(SpellType.Control, targetedMonster.Monster);
+                }
+            }
+
+            return null;
+        }
+
+        private IAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
+        {
+            Monster? bestMonster;
+
+            if (monstersForWildMana.Any())
+            {
+                bestMonster = hero.GetClosestMonster(monstersForWildMana);
+
+                if (bestMonster != null)
+                {
+                    Io.Debug($"Moving hero {hero.Id} to Monster {bestMonster.Id} for Wild Mana");
+                    return new MoveAction(bestMonster.Position);
+                }
+            }
+
+            bestMonster = hero.GetClosestMonster(rankedMonsters);
+
+            if (bestMonster != null)
+            {
+                if (hero.CanCastControlSpell(_availableMana, bestMonster))
+                {
+                    return GetSpellAction(SpellType.Control, bestMonster);
+                }
+
+                return new MoveAction(bestMonster.Position);
+            }
+
+            return new MoveAction(hero.StartingPosition);
+        }
+
+        private IAction GetSpellAction(SpellType spellType, Monster? monster)
+        {
+            _availableMana -= Constants.ManaRequiredForSpell;
+
+            switch (spellType)
+            {
+                case SpellType.Wind:
+                    return new WindSpellAction(_game.OpponentPlayer.BasePosition);
+                case SpellType.Control:
+                    monster.SetControlled();
+                    return new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition);
+                case SpellType.Shield:
+                    return new ShieldSpellAction(monster.Id);
+                case SpellType.Unknown:
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null);
+            }
+        }
+
+        private void AddSpellActionIfTooManyMonsters(IReadOnlyList<RankedMonster> rankedMonsters)
+        {
+            foreach (var hero in _game.MyPlayer.Heroes.Values)
+            {
+                if (rankedMonsters.Any(rankedMonster => hero.CanCastWindSpell(_availableMana, rankedMonster)))
+                {
+                    Io.Debug($"removing {hero.TargetedMonster?.Id} from {hero.Id} because of wind action");
+                    hero.TargetedMonster = null;
+                    _actions.Add(hero.Id, GetSpellAction(SpellType.Wind, null));
+                    break;
+                }
+            }
+        }
+
+        private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
+        {
+            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && monster.IsValidForWildMana(_game.MyPlayer.BasePosition)).ToList();
+
+            foreach (var hero in _game.MyPlayer.Heroes.Values)
+            {
+                if (!_actions.ContainsKey(hero.Id))
+                {
+                    var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
+
+                    _actions.Add(hero.Id, action);
+                }
+            }
         }
 
         private IReadOnlyList<RankedMonster> GetRankedMonsters()
@@ -94,194 +200,6 @@ namespace SpringChallenge2022.Agents
             }
 
             return rankedMonsters.OrderByDescending(x => x.ThreatLevel).ToList();
-        }
-
-        private bool IsMonsterInRange(
-            Hero hero,
-            Monster monster,
-            int range,
-            int minDistance)
-        {
-            var distance = (hero.Position - monster.Position).Length();
-            return distance < range && distance > minDistance;
-        }
-
-        private IAction GetActionIfHeroAlreadyTargetingMonster(Hero hero, RankedMonster targetedMonster)
-        {
-            Io.Debug($"hero {hero.Id} already targeted {targetedMonster.Monster.Id}");
-
-            var spellAction = GetSpellAction(hero, targetedMonster);
-
-            return spellAction ?? new MoveAction(targetedMonster.Monster.Position);
-        }
-
-        private IAction? GetSpellAction(Hero hero, RankedMonster targetedMonster)
-        {
-            if (CanCastWindSpell(hero, targetedMonster))
-            {
-                return GetSpellAction(SpellType.Wind, null);
-            }
-            else if (CanCastControlSpell(hero, targetedMonster.Monster))
-            {
-                var distance = (targetedMonster.Monster.Position - _game.MyPlayer.BasePosition).Length();
-
-                if (distance > Constants.BaseRadius)
-                {
-                    return GetSpellAction(SpellType.Control, targetedMonster.Monster);
-                }
-            }
-
-            return null;
-        }
-
-        private IAction GetSpellAction(SpellType spellType, Monster? monster)
-        {
-            _availableMana -= Constants.ManaRequiredForSpell;
-
-            switch (spellType)
-            {
-                case SpellType.Wind:
-                    return new WindSpellAction(_game.OpponentPlayer.BasePosition);
-                case SpellType.Control:
-                    monster.SetControlled();
-                    return new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition);
-                case SpellType.Shield:
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null);
-            }
-        }
-
-        private bool CanCastWindSpell(Hero hero, RankedMonster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell
-               && rankedMonster.Monster.TargetingBase
-               && IsMonsterInRange(
-                   hero,
-                   rankedMonster.Monster,
-                   Constants.WindSpellRange,
-                   0);
-
-        private bool CanCastControlSpell(Hero hero, Monster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell
-               && IsMonsterInRange(
-                   hero,
-                   rankedMonster,
-                   Constants.ControlSpellRange,
-                   Constants.HeroDamageDistance)
-               && !rankedMonster.ControlledByMe;
-
-        private Hero GetHeroToTargetMonster(RankedMonster rankedMonster)
-        {
-            Hero bestHero = null;
-            var bestHeroDistance = int.MaxValue;
-
-            foreach (var hero in _game.MyPlayer.Heroes.Values)
-            {
-                if (_actions.ContainsKey(hero.Id))
-                {
-                    continue;
-                }
-
-                var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
-
-                if (distance < bestHeroDistance)
-                {
-                    bestHeroDistance = distance;
-                    bestHero = hero;
-                }
-            }
-
-            return bestHero;
-        }
-
-        private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
-        {
-            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && IsMonsterValidForWildMana(monster)).ToList();
-
-            foreach (var hero in _game.MyPlayer.Heroes.Values)
-            {
-                if (!_actions.ContainsKey(hero.Id))
-                {
-                    var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
-
-                    _actions.Add(hero.Id, action);
-                }
-            }
-        }
-
-        private IAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
-        {
-            Monster? bestMonster;
-
-            if (monstersForWildMana.Any())
-            {
-                bestMonster = GetClosestMonster(hero, monstersForWildMana);
-
-                if (bestMonster != null)
-                {
-                    Io.Debug($"Moving hero {hero.Id} to Monster {bestMonster.Id} for Wild Mana");
-                    return new MoveAction(bestMonster.Position);
-                }
-            }
-
-            bestMonster = GetClosestMonster(hero, rankedMonsters);
-
-            if (bestMonster != null)
-            {
-                if (CanCastControlSpell(hero, bestMonster))
-                {
-                    return GetSpellAction(SpellType.Control, bestMonster);
-                }
-
-                return new MoveAction(bestMonster.Position);
-            }
-
-            return new MoveAction(hero.StartingPosition);
-        }
-
-        private static Monster? GetClosestMonster(Hero hero, IReadOnlyList<Monster> monsters)
-        {
-            Monster bestMonster = null;
-            var bestMonsterDistance = int.MaxValue;
-
-            foreach (var monster in monsters)
-            {
-                var distance = (int)(hero.Position - monster.Position).LengthSquared();
-
-                if (distance < bestMonsterDistance)
-                {
-                    bestMonsterDistance = distance;
-                    bestMonster = monster;
-                }
-            }
-
-            return bestMonster;
-        }
-
-        private void AddSpellActionIfTooManyMonsters(IReadOnlyList<RankedMonster> rankedMonsters)
-        {
-            foreach (var hero in _game.MyPlayer.Heroes.Values)
-            {
-                if (rankedMonsters.Any(rankedMonster => CanCastWindSpell(hero, rankedMonster)))
-                {
-                    Io.Debug($"removing {hero.TargetedMonster?.Id} from {hero.Id} because of wind action");
-                    hero.TargetedMonster = null;
-                    _actions.Add(hero.Id, GetSpellAction(SpellType.Wind, null));
-                    break;
-                }
-            }
-        }
-
-        private bool IsMonsterValidForWildMana(Monster monster)
-        {
-            var distance = GetDistanceFromBase(monster);
-            return distance > Constants.BaseRadius && distance < Constants.MaxDistanceFromBaseForHero;
-        }
-
-        private float GetDistanceFromBase(Monster monster)
-        {
-            var distance = (monster.Position - _game.MyPlayer.BasePosition).Length();
-            Io.Debug($"Monster Id {monster.Id} :  Distance {distance}");
-            return distance;
         }
     }
 }

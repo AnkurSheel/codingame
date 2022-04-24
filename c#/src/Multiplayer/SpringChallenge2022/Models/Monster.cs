@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using SpringChallenge2022.Common.Services;
 
 namespace SpringChallenge2022.Models
 {
@@ -55,7 +56,10 @@ namespace SpringChallenge2022.Models
         }
 
         public int GetTurnsToReach(Vector2 position)
-            => (int)(((Position - position).Length() - Constants.MonsterBaseDistanceForDamage) / Constants.MonsterSpeed);
+        {
+            var distance = Position.GetDistance(position);
+            return (int)((distance - Constants.MonsterBaseDistanceForDamage) / Constants.MonsterSpeed);
+        }
 
         public int GetHitsNeeded()
             => (int)Math.Ceiling((double)Health / Constants.DamagePerHit);
@@ -69,5 +73,14 @@ namespace SpringChallenge2022.Models
         {
             ControlledByMe = true;
         }
+
+        public bool IsValidForWildMana(Vector2 basePosition)
+        {
+            var distance = Position.GetDistance(basePosition);
+            Io.Debug($"Monster Id {Id} :  Distance {distance}");
+            return distance > Constants.BaseRadius && distance < Constants.MaxDistanceFromBaseForHero;
+        }
+
+
     }
 }
