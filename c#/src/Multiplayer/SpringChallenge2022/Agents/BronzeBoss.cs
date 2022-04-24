@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using SpringChallenge2022.Actions;
 using SpringChallenge2022.Common.Services;
 using SpringChallenge2022.Models;
@@ -146,37 +147,42 @@ namespace SpringChallenge2022.Agents
             return bestHero;
         }
 
-        private void AddActionsForHeroesWithoutAction(Game game, IReadOnlyList<Monster> monsters)
+        private void AddActionsForHeroesWithoutAction(Game game, IReadOnlyList<Monster> rankedMonsters)
         {
             foreach (var hero in game.MyPlayer.Heroes.Values)
             {
                 if (!_actions.ContainsKey(hero.Id))
                 {
-                    var action = GetActionIfDoingNothing(game, monsters, hero);
+                    var monstersForWildMana = game.Monsters.Values.Where(monster => IsMonsterOutOfBaseRange(game.MyPlayer.BasePosition, monster)).ToList();
+
+                    var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
 
                     _actions.Add(hero.Id, action);
                 }
             }
         }
 
-        private static MoveAction GetActionIfDoingNothing(Game game, IReadOnlyList<Monster> monsters, Hero hero)
+        private MoveAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
         {
-            var bestMonster = GetClosestMonster(hero, monsters);
+            Monster? bestMonster;
 
-            if (bestMonster != null)
+            if (monstersForWildMana.Any())
             {
-                return new MoveAction(bestMonster.Position);
-            }
-
-            if (game.Monsters.Any())
-            {
-                bestMonster = GetClosestMonster(hero, game.Monsters.Values.ToList());
+                bestMonster = GetClosestMonster(hero, monstersForWildMana);
 
                 if (bestMonster != null)
                 {
-                    return new MoveAction(game.Monsters.First().Value.Position);
+                    Io.Debug($"Moving hero {hero.Id} to Monster {bestMonster.Id} for Wild Mana");
+                    return new MoveAction(bestMonster.Position);
                 }
             }
+
+            // bestMonster = GetClosestMonster(hero, rankedMonsters);
+            //
+            // if (bestMonster != null)
+            // {
+            //     return new MoveAction(bestMonster.Position);
+            // }
 
             return new MoveAction(hero.StartingPosition);
         }
@@ -212,6 +218,13 @@ namespace SpringChallenge2022.Agents
                     break;
                 }
             }
+        }
+
+        private bool IsMonsterOutOfBaseRange(Vector2 basePosition, Monster monster)
+        {
+            var distance = (monster.Position - basePosition).Length();
+            Io.Debug($"Monster Id {monster.Id} :  Distance {distance}");
+            return distance > Constants.BaseRadius;
         }
     }
 }
