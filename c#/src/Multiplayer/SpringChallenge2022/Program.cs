@@ -8,7 +8,7 @@ internal class Program
         Io.Initialize();
 
         var game = new Game();
-        var agent = new BronzeBoss();
+        var agent = new SilverBoss();
 
         game.Initialize();
 
