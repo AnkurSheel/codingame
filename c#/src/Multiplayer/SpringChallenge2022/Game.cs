@@ -14,7 +14,7 @@ internal class Game
 
     public Player OpponentPlayer { get; private set; }
 
-    public Dictionary<int, Monster> Monsters { get; private set; }
+    public Dictionary<int, Monster> Monsters { get; private set; } = new Dictionary<int, Monster>();
 
     public void Initialize()
     {
@@ -49,9 +49,12 @@ internal class Game
 
     private void ReInitEntities()
     {
-        var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
+        foreach (var monster in Monsters.Values)
+        {
+            monster.Reset();
+        }
 
-        Monsters = new Dictionary<int, Monster>();
+        var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
         float heroAngleForStartingPosition = 15;
 
@@ -70,40 +73,55 @@ internal class Game
             var nearBase = int.Parse(inputs[9]); // 0=monster with no target yet, 1=monster targeting a base
             var threatFor = int.Parse(inputs[10]); // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
 
+            var position = new Vector2(x, y);
+
             switch (type)
             {
                 case 0:
-                    var monster = new Monster(
-                        id,
-                        new Vector2(x, y),
-                        health,
-                        new Vector2(vx, vy),
-                        nearBase == 1,
-                        threatFor);
-                    Monsters.Add(id, monster);
+                    if (!Monsters.ContainsKey(id))
+                    {
+                        var monster = new Monster(
+                            id,
+                            position,
+                            health,
+                            new Vector2(vx, vy),
+                            nearBase == 1,
+                            threatFor);
+                        Monsters.Add(id, monster);
+                    }
+                    else
+                    {
+                        Monsters[id]
+                        .Update(
+                            position,
+                            health,
+                            new Vector2(vx, vy),
+                            nearBase == 1,
+                            threatFor);
+                    }
+
                     break;
                 case 1:
                     if (MyPlayer.Heroes.ContainsKey(id))
                     {
-                        MyPlayer.Heroes[id].Update(new Vector2(x, y));
+                        MyPlayer.Heroes[id].Update(position);
                     }
                     else
                     {
                         var startingPosition = GetStartingPositionForHero(x, heroAngleForStartingPosition);
                         heroAngleForStartingPosition += 30;
 
-                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y), startingPosition));
+                        MyPlayer.Heroes.Add(id, new Hero(id, position, startingPosition));
                     }
 
                     break;
                 case 2:
                     if (OpponentPlayer.Heroes.ContainsKey(id))
                     {
-                        OpponentPlayer.Heroes[id].Update(new Vector2(x, y));
+                        OpponentPlayer.Heroes[id].Update(position);
                     }
                     else
                     {
-                        var position = new Vector2(x, y);
                         OpponentPlayer.Heroes.Add(id, new Hero(id, position, position));
                     }
 
@@ -112,6 +130,8 @@ internal class Game
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        Monsters = Monsters.Values.Where(x => x.Reinit).ToDictionary(v => v.Id, v => v);
     }
 
     private Vector2 GetStartingPositionForHero(int posX, float heroAngleForStartingPosition)

@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 25/04/2022 12:23
+ // 25/04/2022 01:22
 
 
 namespace SpringChallenge2022
@@ -46,7 +46,7 @@ internal class Game
 
     public Player OpponentPlayer { get; private set; }
 
-    public Dictionary<int, Monster> Monsters { get; private set; }
+    public Dictionary<int, Monster> Monsters { get; private set; } = new Dictionary<int, Monster>();
 
     public void Initialize()
     {
@@ -81,9 +81,12 @@ internal class Game
 
     private void ReInitEntities()
     {
-        var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
+        foreach (var monster in Monsters.Values)
+        {
+            monster.Reset();
+        }
 
-        Monsters = new Dictionary<int, Monster>();
+        var entityCount = int.Parse(Io.ReadLine()); // Amount of heros and monsters you can see
 
         float heroAngleForStartingPosition = 15;
 
@@ -102,40 +105,55 @@ internal class Game
             var nearBase = int.Parse(inputs[9]); // 0=monster with no target yet, 1=monster targeting a base
             var threatFor = int.Parse(inputs[10]); // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
 
+            var position = new Vector2(x, y);
+
             switch (type)
             {
                 case 0:
-                    var monster = new Monster(
-                        id,
-                        new Vector2(x, y),
-                        health,
-                        new Vector2(vx, vy),
-                        nearBase == 1,
-                        threatFor);
-                    Monsters.Add(id, monster);
+                    if (!Monsters.ContainsKey(id))
+                    {
+                        var monster = new Monster(
+                            id,
+                            position,
+                            health,
+                            new Vector2(vx, vy),
+                            nearBase == 1,
+                            threatFor);
+                        Monsters.Add(id, monster);
+                    }
+                    else
+                    {
+                        Monsters[id]
+                        .Update(
+                            position,
+                            health,
+                            new Vector2(vx, vy),
+                            nearBase == 1,
+                            threatFor);
+                    }
+
                     break;
                 case 1:
                     if (MyPlayer.Heroes.ContainsKey(id))
                     {
-                        MyPlayer.Heroes[id].Update(new Vector2(x, y));
+                        MyPlayer.Heroes[id].Update(position);
                     }
                     else
                     {
                         var startingPosition = GetStartingPositionForHero(x, heroAngleForStartingPosition);
                         heroAngleForStartingPosition += 30;
 
-                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y), startingPosition));
+                        MyPlayer.Heroes.Add(id, new Hero(id, position, startingPosition));
                     }
 
                     break;
                 case 2:
                     if (OpponentPlayer.Heroes.ContainsKey(id))
                     {
-                        OpponentPlayer.Heroes[id].Update(new Vector2(x, y));
+                        OpponentPlayer.Heroes[id].Update(position);
                     }
                     else
                     {
-                        var position = new Vector2(x, y);
                         OpponentPlayer.Heroes.Add(id, new Hero(id, position, position));
                     }
 
@@ -144,6 +162,8 @@ internal class Game
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        Monsters = Monsters.Values.Where(x => x.Reinit).ToDictionary(v => v.Id, v => v);
     }
 
     private Vector2 GetStartingPositionForHero(int posX, float heroAngleForStartingPosition)
@@ -442,6 +462,10 @@ namespace SpringChallenge2022.Agents
             _actions = new Dictionary<int, IAction>();
             _availableMana = game.MyPlayer.Mana;
 
+            foreach (var monster in _game.Monsters.Values)
+            {
+                Io.Debug($"MonsterID: {monster.Id}");
+            }
             var rankedMonsters = GetRankedMonsters();
 
             if (rankedMonsters.Count > Constants.NumberOfHeroes)
@@ -484,7 +508,7 @@ namespace SpringChallenge2022.Agents
         {
             var rankedMonsters = new List<RankedMonster>();
 
-            foreach (var (_, monster) in _game.Monsters)
+            foreach (var monster in _game.Monsters.Values)
             {
                 if (monster.ThreatFor == 1)
                 {
@@ -551,20 +575,25 @@ namespace SpringChallenge2022.Agents
         private IAction GetSpellAction(SpellType spellType, Monster? monster)
         {
             _availableMana -= Constants.ManaRequiredForSpell;
-            return spellType switch
+
+            switch (spellType)
             {
-                SpellType.Wind => new WindSpellAction(_game.OpponentPlayer.BasePosition),
-                SpellType.Control => new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition),
-                SpellType.Shield => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null),
-                _ => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null)
-            };
+                case SpellType.Wind:
+                    return new WindSpellAction(_game.OpponentPlayer.BasePosition);
+                case SpellType.Control:
+                    monster.SetControlled();
+                    return new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition);
+                case SpellType.Shield:
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null);
+            }
         }
 
         private bool CanCastWindSpell(Hero hero, RankedMonster rankedMonster)
             => _availableMana >= Constants.ManaRequiredForSpell && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
 
         private bool CanCastControlSpell(Hero hero, Monster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange);
+            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange) && !rankedMonster.ControlledByMe;
 
         private Hero GetHeroToTargetMonster(RankedMonster rankedMonster)
         {
@@ -592,12 +621,12 @@ namespace SpringChallenge2022.Agents
 
         private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
         {
+            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
+
             foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
                 if (!_actions.ContainsKey(hero.Id))
                 {
-                    var monstersForWildMana = _game.Monsters.Values.Where(monster => IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
-
                     var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
 
                     _actions.Add(hero.Id, action);
@@ -720,17 +749,21 @@ namespace SpringChallenge2022.Models
 {
     public class Monster
     {
-
         private Vector2 _speed;
 
         public int Id { get; }
 
-        public Vector2 Position { get; }
+        public Vector2 Position { get; private set; }
 
-        public int Health { get; }
-        public bool TargetingBase { get; }
+        public int Health { get; private set; }
 
-        public int ThreatFor { get; }
+        public bool TargetingBase { get; private set; }
+
+        public int ThreatFor { get; private set; }
+
+        public bool Reinit { get; private set; }
+
+        public bool ControlledByMe { get; private set; }
 
         public Monster(
             int id,
@@ -746,14 +779,39 @@ namespace SpringChallenge2022.Models
             _speed = speed;
             TargetingBase = targetingBase;
             ThreatFor = threatFor;
+            Reinit = true;
+            ControlledByMe = false;
+        }
+
+        public void Update(
+            Vector2 position,
+            int health,
+            Vector2 speed,
+            bool targetingBase,
+            int threatFor)
+        {
+            Position = position;
+            Health = health;
+            _speed = speed;
+            TargetingBase = targetingBase;
+            ThreatFor = threatFor;
+            Reinit = true;
         }
 
         public int GetTurnsToReach(Vector2 position)
             => (int)(((Position - position).Length() - Constants.MonsterBaseDistanceForDamage) / Constants.MonsterSpeed);
 
         public int GetHitsNeeded()
+            => (int)Math.Ceiling((double)Health / Constants.DamagePerHit);
+
+        public void Reset()
         {
-            return (int)Math.Ceiling((double)(Health) / Constants.DamagePerHit);
+            Reinit = false;
+        }
+
+        public void SetControlled()
+        {
+            ControlledByMe = true;
         }
     }
 }

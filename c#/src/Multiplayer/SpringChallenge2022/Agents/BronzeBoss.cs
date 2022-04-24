@@ -20,6 +20,10 @@ namespace SpringChallenge2022.Agents
             _actions = new Dictionary<int, IAction>();
             _availableMana = game.MyPlayer.Mana;
 
+            foreach (var monster in _game.Monsters.Values)
+            {
+                Io.Debug($"MonsterID: {monster.Id}");
+            }
             var rankedMonsters = GetRankedMonsters();
 
             if (rankedMonsters.Count > Constants.NumberOfHeroes)
@@ -62,7 +66,7 @@ namespace SpringChallenge2022.Agents
         {
             var rankedMonsters = new List<RankedMonster>();
 
-            foreach (var (_, monster) in _game.Monsters)
+            foreach (var monster in _game.Monsters.Values)
             {
                 if (monster.ThreatFor == 1)
                 {
@@ -129,20 +133,25 @@ namespace SpringChallenge2022.Agents
         private IAction GetSpellAction(SpellType spellType, Monster? monster)
         {
             _availableMana -= Constants.ManaRequiredForSpell;
-            return spellType switch
+
+            switch (spellType)
             {
-                SpellType.Wind => new WindSpellAction(_game.OpponentPlayer.BasePosition),
-                SpellType.Control => new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition),
-                SpellType.Shield => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null),
-                _ => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null)
-            };
+                case SpellType.Wind:
+                    return new WindSpellAction(_game.OpponentPlayer.BasePosition);
+                case SpellType.Control:
+                    monster.SetControlled();
+                    return new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition);
+                case SpellType.Shield:
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null);
+            }
         }
 
         private bool CanCastWindSpell(Hero hero, RankedMonster rankedMonster)
             => _availableMana >= Constants.ManaRequiredForSpell && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
 
         private bool CanCastControlSpell(Hero hero, Monster rankedMonster)
-            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange);
+            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange) && !rankedMonster.ControlledByMe;
 
         private Hero GetHeroToTargetMonster(RankedMonster rankedMonster)
         {
@@ -170,12 +179,12 @@ namespace SpringChallenge2022.Agents
 
         private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
         {
+            var monstersForWildMana = _game.Monsters.Values.Where(monster => !monster.ControlledByMe && IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
+
             foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
                 if (!_actions.ContainsKey(hero.Id))
                 {
-                    var monstersForWildMana = _game.Monsters.Values.Where(monster => IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
-
                     var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
 
                     _actions.Add(hero.Id, action);
