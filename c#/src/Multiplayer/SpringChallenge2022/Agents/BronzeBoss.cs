@@ -47,7 +47,7 @@ namespace SpringChallenge2022.Agents
                 }
             }
 
-            GetActionIfDoingNothing(game, rankedMonsters, _actions);
+            AddActionsForHeroesWithoutAction(game, rankedMonsters.Select(x => x.Monster).ToList());
 
             return _actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
@@ -146,36 +146,54 @@ namespace SpringChallenge2022.Agents
             return bestHero;
         }
 
-        private void GetActionIfDoingNothing(Game game, IReadOnlyList<RankedMonster> rankedMonsters, Dictionary<int, IAction> actions)
+        private void AddActionsForHeroesWithoutAction(Game game, IReadOnlyList<Monster> monsters)
         {
             foreach (var hero in game.MyPlayer.Heroes.Values)
             {
-                if (!actions.ContainsKey(hero.Id))
+                if (!_actions.ContainsKey(hero.Id))
                 {
-                    var bestMonster = GetClosestMonster(hero, rankedMonsters);
+                    var action = GetActionIfDoingNothing(game, monsters, hero);
 
-                    var action = bestMonster != null
-                        ? new MoveAction(bestMonster.Position)
-                        : new MoveAction(hero.StartingPosition);
-
-                    actions.Add(hero.Id, action);
+                    _actions.Add(hero.Id, action);
                 }
             }
         }
 
-        private static Monster? GetClosestMonster(Hero hero, IReadOnlyList<RankedMonster> rankedMonsters)
+        private static MoveAction GetActionIfDoingNothing(Game game, IReadOnlyList<Monster> monsters, Hero hero)
+        {
+            var bestMonster = GetClosestMonster(hero, monsters);
+
+            if (bestMonster != null)
+            {
+                return new MoveAction(bestMonster.Position);
+            }
+
+            if (game.Monsters.Any())
+            {
+                bestMonster = GetClosestMonster(hero, game.Monsters.Values.ToList());
+
+                if (bestMonster != null)
+                {
+                    return new MoveAction(game.Monsters.First().Value.Position);
+                }
+            }
+
+            return new MoveAction(hero.StartingPosition);
+        }
+
+        private static Monster? GetClosestMonster(Hero hero, IReadOnlyList<Monster> monsters)
         {
             Monster bestMonster = null;
             var bestMonsterDistance = int.MaxValue;
 
-            foreach (var rankedMonster in rankedMonsters)
+            foreach (var monster in monsters)
             {
-                var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
+                var distance = (int)(hero.Position - monster.Position).LengthSquared();
 
                 if (distance < bestMonsterDistance)
                 {
                     bestMonsterDistance = distance;
-                    bestMonster = rankedMonster.Monster;
+                    bestMonster = monster;
                 }
             }
 
