@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 07:35
+ // 24/04/2022 08:25
 
 
 namespace SpringChallenge2022
@@ -23,6 +23,7 @@ namespace SpringChallenge2022
         public const int DamagePerHit = 2;
         public const int ManaRequiredForSpell = 10;
         public const int ControlSpellRange = 2200;
+        public const int DistanceFromBaseForStartingPosition = 6000;
         public const float DistanceBaseScore = 10000.0f;
         public const float ShotsNeededBaseScore = 20.0f;
         public const float TargetingBaseBaseScore = 1000.0f;
@@ -77,6 +78,8 @@ internal class Game
 
         Monsters = new Dictionary<int, Monster>();
 
+        float heroAngleForStartingPosition = 15;
+
         for (var i = 0; i < entityCount; i++)
         {
             var inputs = Io.ReadLine().Split(' ');
@@ -111,7 +114,10 @@ internal class Game
                     }
                     else
                     {
-                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
+                        var startingPosition = GetStartingPositionForHero(x, heroAngleForStartingPosition);
+                        heroAngleForStartingPosition += 30;
+
+                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y), startingPosition));
                     }
 
                     break;
@@ -122,7 +128,8 @@ internal class Game
                     }
                     else
                     {
-                        OpponentPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
+                        var position = new Vector2(x, y);
+                        OpponentPlayer.Heroes.Add(id, new Hero(id, position, position));
                     }
 
                     break;
@@ -130,6 +137,22 @@ internal class Game
                     throw new ArgumentOutOfRangeException();
             }
         }
+    }
+
+    private Vector2 GetStartingPositionForHero(int posX, float heroAngleForStartingPosition)
+    {
+        var angleForStartingPosition = posX > Constants.BottomRightMap.X / 2
+            ? 270 - heroAngleForStartingPosition
+            : heroAngleForStartingPosition;
+
+        var direction = Vector2Extensions.GetDirection(angleForStartingPosition);
+
+        Io.Debug($"Angle: {angleForStartingPosition}, Direction {direction} : Angle {direction.GetAngle()}");
+
+        var startingPosition = MyPlayer.BasePosition + direction * Constants.DistanceFromBaseForStartingPosition;
+
+        Io.Debug($"StartingPosition: {startingPosition}");
+        return startingPosition;
     }
 }
 
@@ -525,16 +548,34 @@ namespace SpringChallenge2022.Agents
             {
                 if (!actions.ContainsKey(hero.Id))
                 {
-                    if (rankedMonsters.Any())
-                    {
-                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Monster.Position));
-                    }
-                    else
-                    {
-                        actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
-                    }
+                    var bestMonster = GetClosestMonster(hero, rankedMonsters);
+
+                    var action = bestMonster != null
+                        ? new MoveAction(bestMonster.Position)
+                        : new MoveAction(hero.StartingPosition);
+
+                    actions.Add(hero.Id, action);
                 }
             }
+        }
+
+        private static Monster? GetClosestMonster(Hero hero, IReadOnlyList<RankedMonster> rankedMonsters)
+        {
+            Monster bestMonster = null;
+            var bestMonsterDistance = int.MaxValue;
+
+            foreach (var rankedMonster in rankedMonsters)
+            {
+                var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
+
+                if (distance < bestMonsterDistance)
+                {
+                    bestMonsterDistance = distance;
+                    bestMonster = rankedMonster.Monster;
+                }
+            }
+
+            return bestMonster;
         }
     }
 }
@@ -564,21 +605,12 @@ namespace SpringChallenge2022.Models
 
         public Monster? TargetedMonster { get; set; }
 
-        public Hero(int id, Vector2 position)
+        public Hero(int id, Vector2 position, Vector2 startingPosition)
         {
             Id = id;
             Position = position;
-
-            var direction = position.X > 8000
-                ? new Vector2(position.X - Constants.BottomRightMap.X, position.Y - Constants.BottomRightMap.Y)
-                : new Vector2(position.X, position.Y);
-
-            direction /= direction.Length();
-
-            StartingPosition = position + direction * 3500;
+            StartingPosition = startingPosition;
         }
-
-        //17000 -position.x
 
         public void Update(Vector2 position)
         {
@@ -686,6 +718,25 @@ namespace SpringChallenge2022.Models
 
         public override string ToString()
             => $"Id: {Monster.Id} : ThreatLevel {ThreatLevel} : TurnsToReach {TurnsToReach} : ShotsNeeded {ShotsNeeded}";
+    }
+}
+
+namespace SpringChallenge2022.Models
+{
+    public static class Vector2Extensions
+    {
+        public static double GetAngle(this Vector2 direction)
+        {
+            var radians = Math.Atan2(direction.Y, direction.X);
+            var degrees = 180 * radians / Math.PI;
+            return (360 + Math.Round(degrees)) % 360;
+        }
+
+        public static Vector2 GetDirection(float degree)
+        {
+            var radians = degree * Math.PI / 180;
+            return new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+        }
     }
 }
 

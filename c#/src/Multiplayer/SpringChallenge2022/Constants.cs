@@ -11,6 +11,7 @@ namespace SpringChallenge2022
         public const int DamagePerHit = 2;
         public const int ManaRequiredForSpell = 10;
         public const int ControlSpellRange = 2200;
+        public const int DistanceFromBaseForStartingPosition = 6000;
         public const float DistanceBaseScore = 10000.0f;
         public const float ShotsNeededBaseScore = 20.0f;
         public const float TargetingBaseBaseScore = 1000.0f;

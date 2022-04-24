@@ -53,6 +53,8 @@ internal class Game
 
         Monsters = new Dictionary<int, Monster>();
 
+        float heroAngleForStartingPosition = 15;
+
         for (var i = 0; i < entityCount; i++)
         {
             var inputs = Io.ReadLine().Split(' ');
@@ -87,7 +89,10 @@ internal class Game
                     }
                     else
                     {
-                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
+                        var startingPosition = GetStartingPositionForHero(x, heroAngleForStartingPosition);
+                        heroAngleForStartingPosition += 30;
+
+                        MyPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y), startingPosition));
                     }
 
                     break;
@@ -98,7 +103,8 @@ internal class Game
                     }
                     else
                     {
-                        OpponentPlayer.Heroes.Add(id, new Hero(id, new Vector2(x, y)));
+                        var position = new Vector2(x, y);
+                        OpponentPlayer.Heroes.Add(id, new Hero(id, position, position));
                     }
 
                     break;
@@ -106,5 +112,21 @@ internal class Game
                     throw new ArgumentOutOfRangeException();
             }
         }
+    }
+
+    private Vector2 GetStartingPositionForHero(int posX, float heroAngleForStartingPosition)
+    {
+        var angleForStartingPosition = posX > Constants.BottomRightMap.X / 2
+            ? 270 - heroAngleForStartingPosition
+            : heroAngleForStartingPosition;
+
+        var direction = Vector2Extensions.GetDirection(angleForStartingPosition);
+
+        Io.Debug($"Angle: {angleForStartingPosition}, Direction {direction} : Angle {direction.GetAngle()}");
+
+        var startingPosition = MyPlayer.BasePosition + direction * Constants.DistanceFromBaseForStartingPosition;
+
+        Io.Debug($"StartingPosition: {startingPosition}");
+        return startingPosition;
     }
 }
