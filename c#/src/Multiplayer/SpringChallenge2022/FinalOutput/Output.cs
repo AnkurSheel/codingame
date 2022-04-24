@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 06:48
+ // 24/04/2022 07:35
 
 
 namespace SpringChallenge2022
@@ -23,7 +23,10 @@ namespace SpringChallenge2022
         public const int DamagePerHit = 2;
         public const int ManaRequiredForSpell = 10;
         public const int ControlSpellRange = 2200;
-
+        public const float DistanceBaseScore = 10000.0f;
+        public const float ShotsNeededBaseScore = 20.0f;
+        public const float TargetingBaseBaseScore = 1000.0f;
+        public const float NonTargetingBaseBaseScore = 500.0f;
     }
 }
 
@@ -415,49 +418,109 @@ namespace SpringChallenge2022.Agents
 
                 if (heroTargetingMonster != null)
                 {
-                    Io.Debug($"hero {heroTargetingMonster.Id} already targeted {rankedMonster.Monster.Id}");
-
-                    if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
-                        && game.MyPlayer.Mana > Constants.ManaRequiredForSpell
-                        && IsMonsterInRange(heroTargetingMonster, rankedMonster.Monster, Constants.ControlSpellRange))
-                    {
-                        actions.Add(heroTargetingMonster.Id, new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition));
-                    }
-                    else
-                    {
-                        actions.Add(heroTargetingMonster.Id, new MoveAction(rankedMonster.Monster.Position));
-                    }
-
-                    continue;
+                    var action = GetActionIfHeroAlreadyTargetingMonster(game, heroTargetingMonster, rankedMonster);
+                    actions.Add(heroTargetingMonster.Id, action);
                 }
-
-                Hero bestHero = null;
-                var bestHeroDistance = int.MaxValue;
-
-                foreach (var hero in game.MyPlayer.Heroes.Values)
+                else
                 {
-                    if (hero.TargetedMonster != null)
+                    var hero = GetHeroToTargetMonster(game, rankedMonster);
+
+                    if (hero != null)
                     {
-                        continue;
+                        hero.TargetedMonster = rankedMonster.Monster;
+                        Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
+                        actions.Add(hero.Id, new MoveAction(rankedMonster.Monster.Position));
                     }
-
-                    var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
-
-                    if (distance < bestHeroDistance)
-                    {
-                        bestHeroDistance = distance;
-                        bestHero = hero;
-                    }
-                }
-
-                if (bestHero != null)
-                {
-                    bestHero.TargetedMonster = rankedMonster.Monster;
-                    Io.Debug($"hero {bestHero.Id} targeting {bestHero.TargetedMonster.Id}");
-                    actions.Add(bestHero.Id, new MoveAction(rankedMonster.Monster.Position));
                 }
             }
 
+            GetActionIfDoingNothing(game, rankedMonsters, actions);
+
+            return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+        }
+
+        private IReadOnlyList<RankedMonster> GetRankedMonsters(Game game)
+        {
+            var rankedMonsters = new List<RankedMonster>();
+
+            foreach (var (_, monster) in game.Monsters)
+            {
+                if (monster.ThreatFor == 1)
+                {
+                    var turnsToReach = monster.GetTurnsToReach(game.MyPlayer.BasePosition);
+                    var shotsNeeded = monster.GetHitsNeeded();
+
+                    var distanceScore = Constants.DistanceBaseScore / (turnsToReach + 1);
+                    var shotsNeededScore = shotsNeeded * Constants.ShotsNeededBaseScore;
+
+                    var baseThreatLevel = monster.TargetingBase
+                        ? Constants.TargetingBaseBaseScore
+                        : Constants.NonTargetingBaseBaseScore;
+
+                    var threatLevel = baseThreatLevel + distanceScore + shotsNeededScore;
+
+                    Io.Debug($"Scores : threatLevel {threatLevel} : baseThreatLevel {baseThreatLevel} : distanceScore {distanceScore} : shotsNeededScore {shotsNeededScore}");
+
+                    rankedMonsters.Add(
+                        new RankedMonster(
+                            monster,
+                            threatLevel,
+                            turnsToReach,
+                            shotsNeeded));
+                }
+            }
+
+            return rankedMonsters.OrderByDescending(x => x.ThreatLevel).ToList();
+        }
+
+        private bool IsMonsterInRange(Hero hero, Monster monster, int range)
+        {
+            var distance = (hero.Position - monster.Position).Length();
+            return distance < range;
+        }
+
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero heroTargetingMonster, RankedMonster rankedMonster)
+        {
+            Io.Debug($"hero {heroTargetingMonster.Id} already targeted {rankedMonster.Monster.Id}");
+
+            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
+                && game.MyPlayer.Mana > Constants.ManaRequiredForSpell
+                && IsMonsterInRange(heroTargetingMonster, rankedMonster.Monster, Constants.ControlSpellRange))
+            {
+                return new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition);
+            }
+            else
+            {
+                return new MoveAction(rankedMonster.Monster.Position);
+            }
+        }
+
+        private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)
+        {
+            Hero bestHero = null;
+            var bestHeroDistance = int.MaxValue;
+
+            foreach (var hero in game.MyPlayer.Heroes.Values)
+            {
+                if (hero.TargetedMonster != null)
+                {
+                    continue;
+                }
+
+                var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
+
+                if (distance < bestHeroDistance)
+                {
+                    bestHeroDistance = distance;
+                    bestHero = hero;
+                }
+            }
+
+            return bestHero;
+        }
+
+        private void GetActionIfDoingNothing(Game game, IReadOnlyList<RankedMonster> rankedMonsters, Dictionary<int, IAction> actions)
+        {
             foreach (var hero in game.MyPlayer.Heroes.Values)
             {
                 if (!actions.ContainsKey(hero.Id))
@@ -472,51 +535,6 @@ namespace SpringChallenge2022.Agents
                     }
                 }
             }
-
-            return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
-        }
-
-        private bool IsMonsterInRange(Hero hero, Monster monster, int range)
-        {
-            var distance = (hero.Position - monster.Position).Length();
-            return distance < range;
-        }
-
-        private IReadOnlyList<RankedMonster> GetRankedMonsters(Game game)
-        {
-            var rankedMonsters = new List<RankedMonster>();
-
-            foreach (var (_, monster) in game.Monsters)
-            {
-                if (monster.ThreatFor == 1)
-                {
-                    var threatLevel = 0.0f;
-
-                    var turnsToReach = monster.GetTurnsToReach(game.MyPlayer.BasePosition);
-                    var shotsNeeded = monster.GetHitsNeeded();
-
-                    var distanceScore = 500.0f * (1.0f / (turnsToReach + 1));
-
-                    Io.Debug($"{distanceScore}");
-                    if (monster.TargetingBase)
-                    {
-                        threatLevel = 1000 + distanceScore;
-                    }
-                    else
-                    {
-                        threatLevel = 500 + distanceScore;
-                    }
-
-                    rankedMonsters.Add(
-                        new RankedMonster(
-                            monster,
-                            threatLevel,
-                            turnsToReach,
-                            shotsNeeded));
-                }
-            }
-
-            return rankedMonsters.OrderByDescending(x => x.ThreatLevel).ToList();
         }
     }
 }
