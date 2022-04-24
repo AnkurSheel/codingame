@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 25/04/2022 12:06
+ // 25/04/2022 12:23
 
 
 namespace SpringChallenge2022
@@ -20,6 +20,7 @@ namespace SpringChallenge2022
         public static readonly Random RandomGenerator = new Random(123);
         public static readonly Vector2 BottomRightMap = new Vector2(17630, 9000);
         public const int MonsterSpeed = 400;
+        public const int HeroDamageDistance = 800;
         public const int MonsterBaseDistanceForDamage = 300;
         public const int DamagePerHit = 2;
         public const int ManaRequiredForSpell = 10;
@@ -433,17 +434,19 @@ namespace SpringChallenge2022.Agents
     {
         private Dictionary<int, IAction> _actions;
         private int _availableMana;
+        private Game _game;
 
         public IReadOnlyList<IAction> GetAction(Game game)
         {
+            _game = game;
             _actions = new Dictionary<int, IAction>();
             _availableMana = game.MyPlayer.Mana;
 
-            var rankedMonsters = GetRankedMonsters(game);
+            var rankedMonsters = GetRankedMonsters();
 
             if (rankedMonsters.Count > Constants.NumberOfHeroes)
             {
-                AddSpellActionIfTooManyMonsters(game, rankedMonsters);
+                AddSpellActionIfTooManyMonsters(rankedMonsters);
             }
 
             Io.Debug($"RankedMonsters {rankedMonsters.Count}");
@@ -456,12 +459,12 @@ namespace SpringChallenge2022.Agents
 
                 if (heroTargetingMonster != null)
                 {
-                    var action = GetActionIfHeroAlreadyTargetingMonster(game, heroTargetingMonster, rankedMonster);
+                    var action = GetActionIfHeroAlreadyTargetingMonster(heroTargetingMonster, rankedMonster);
                     _actions.Add(heroTargetingMonster.Id, action);
                 }
                 else
                 {
-                    var hero = GetHeroToTargetMonster(game, rankedMonster);
+                    var hero = GetHeroToTargetMonster(rankedMonster);
 
                     if (hero != null)
                     {
@@ -472,20 +475,20 @@ namespace SpringChallenge2022.Agents
                 }
             }
 
-            AddActionsForHeroesWithoutAction(game, rankedMonsters.Select(x => x.Monster).ToList());
+            AddActionsForHeroesWithoutAction(rankedMonsters.Select(x => x.Monster).ToList());
 
             return _actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
 
-        private IReadOnlyList<RankedMonster> GetRankedMonsters(Game game)
+        private IReadOnlyList<RankedMonster> GetRankedMonsters()
         {
             var rankedMonsters = new List<RankedMonster>();
 
-            foreach (var (_, monster) in game.Monsters)
+            foreach (var (_, monster) in _game.Monsters)
             {
                 if (monster.ThreatFor == 1)
                 {
-                    var turnsToReach = monster.GetTurnsToReach(game.MyPlayer.BasePosition);
+                    var turnsToReach = monster.GetTurnsToReach(_game.MyPlayer.BasePosition);
                     var shotsNeeded = monster.GetHitsNeeded();
 
                     var distanceScore = Constants.DistanceBaseScore / (turnsToReach + 1);
@@ -517,58 +520,58 @@ namespace SpringChallenge2022.Agents
             return distance < range;
         }
 
-        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero hero, RankedMonster rankedMonster)
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Hero hero, RankedMonster rankedMonster)
         {
             Io.Debug($"hero {hero.Id} already targeted {rankedMonster.Monster.Id}");
 
-            var spellAction = GetSpellAction(game, hero, rankedMonster);
+            var spellAction = GetSpellAction(hero, rankedMonster);
 
             return spellAction ?? new MoveAction(rankedMonster.Monster.Position);
         }
 
-        private IAction? GetSpellAction(Game game, Hero hero, RankedMonster rankedMonster)
+        private IAction? GetSpellAction(Hero hero, RankedMonster rankedMonster)
         {
-            if (CanCastWindSpell(game, hero, rankedMonster))
+            if (CanCastWindSpell(hero, rankedMonster))
             {
-                return GetSpellAction(SpellType.Wind, game, null);
+                return GetSpellAction(SpellType.Wind, null);
             }
-            else if (CanCastControlSpell(game, hero, rankedMonster.Monster))
+            else if (CanCastControlSpell(hero, rankedMonster.Monster))
             {
-                var distance = (rankedMonster.Monster.Position - game.MyPlayer.BasePosition).Length();
+                var distance = (rankedMonster.Monster.Position - _game.MyPlayer.BasePosition).Length();
 
                 if (distance > Constants.BaseRadius)
                 {
-                    return GetSpellAction(SpellType.Control, game, rankedMonster.Monster);
+                    return GetSpellAction(SpellType.Control, rankedMonster.Monster);
                 }
             }
 
             return null;
         }
 
-        private IAction GetSpellAction(SpellType spellType, Game game, Monster? monster)
+        private IAction GetSpellAction(SpellType spellType, Monster? monster)
         {
             _availableMana -= Constants.ManaRequiredForSpell;
             return spellType switch
             {
-                SpellType.Wind => new WindSpellAction(game.OpponentPlayer.BasePosition),
-                SpellType.Control => new ControlSpellAction(monster.Id, game.OpponentPlayer.BasePosition),
+                SpellType.Wind => new WindSpellAction(_game.OpponentPlayer.BasePosition),
+                SpellType.Control => new ControlSpellAction(monster.Id, _game.OpponentPlayer.BasePosition),
                 SpellType.Shield => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null),
                 _ => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null)
             };
         }
 
-        private bool CanCastWindSpell(Game game, Hero hero, RankedMonster rankedMonster)
+        private bool CanCastWindSpell(Hero hero, RankedMonster rankedMonster)
             => _availableMana >= Constants.ManaRequiredForSpell && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
 
-        private bool CanCastControlSpell(Game game, Hero hero, Monster rankedMonster)
+        private bool CanCastControlSpell(Hero hero, Monster rankedMonster)
             => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange);
 
-        private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)
+        private Hero GetHeroToTargetMonster(RankedMonster rankedMonster)
         {
             Hero bestHero = null;
             var bestHeroDistance = int.MaxValue;
 
-            foreach (var hero in game.MyPlayer.Heroes.Values)
+            foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
                 if (_actions.ContainsKey(hero.Id))
                 {
@@ -587,13 +590,13 @@ namespace SpringChallenge2022.Agents
             return bestHero;
         }
 
-        private void AddActionsForHeroesWithoutAction(Game game, IReadOnlyList<Monster> rankedMonsters)
+        private void AddActionsForHeroesWithoutAction(IReadOnlyList<Monster> rankedMonsters)
         {
-            foreach (var hero in game.MyPlayer.Heroes.Values)
+            foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
                 if (!_actions.ContainsKey(hero.Id))
                 {
-                    var monstersForWildMana = game.Monsters.Values.Where(monster => IsMonsterValidForWildMana(game.MyPlayer.BasePosition, monster)).ToList();
+                    var monstersForWildMana = _game.Monsters.Values.Where(monster => IsMonsterValidForWildMana(_game.MyPlayer.BasePosition, monster)).ToList();
 
                     var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
 
@@ -602,7 +605,7 @@ namespace SpringChallenge2022.Agents
             }
         }
 
-        private MoveAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
+        private IAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
         {
             Monster? bestMonster;
 
@@ -617,12 +620,17 @@ namespace SpringChallenge2022.Agents
                 }
             }
 
-            // bestMonster = GetClosestMonster(hero, rankedMonsters);
-            //
-            // if (bestMonster != null)
-            // {
-            //     return new MoveAction(bestMonster.Position);
-            // }
+            bestMonster = GetClosestMonster(hero, rankedMonsters);
+
+            if (bestMonster != null)
+            {
+                if (CanCastControlSpell(hero, bestMonster))
+                {
+                    return GetSpellAction(SpellType.Control, bestMonster);
+                }
+
+                return new MoveAction(bestMonster.Position);
+            }
 
             return new MoveAction(hero.StartingPosition);
         }
@@ -646,15 +654,15 @@ namespace SpringChallenge2022.Agents
             return bestMonster;
         }
 
-        private void AddSpellActionIfTooManyMonsters(Game game, IReadOnlyList<RankedMonster> rankedMonsters)
+        private void AddSpellActionIfTooManyMonsters(IReadOnlyList<RankedMonster> rankedMonsters)
         {
-            foreach (var hero in game.MyPlayer.Heroes.Values)
+            foreach (var hero in _game.MyPlayer.Heroes.Values)
             {
-                if (rankedMonsters.Any(rankedMonster => CanCastWindSpell(game, hero, rankedMonster)))
+                if (rankedMonsters.Any(rankedMonster => CanCastWindSpell(hero, rankedMonster)))
                 {
                     Io.Debug($"removing {hero.TargetedMonster?.Id} from {hero.Id} because of wind action");
                     hero.TargetedMonster = null;
-                    _actions.Add(hero.Id, GetSpellAction(SpellType.Wind, game, null));
+                    _actions.Add(hero.Id, GetSpellAction(SpellType.Wind, null));
                     break;
                 }
             }

@@ -183,7 +183,7 @@ namespace SpringChallenge2022.Agents
             }
         }
 
-        private MoveAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
+        private IAction GetActionIfDoingNothing(Hero hero, IReadOnlyList<Monster> rankedMonsters, IReadOnlyList<Monster> monstersForWildMana)
         {
             Monster? bestMonster;
 
@@ -198,12 +198,17 @@ namespace SpringChallenge2022.Agents
                 }
             }
 
-            // bestMonster = GetClosestMonster(hero, rankedMonsters);
-            //
-            // if (bestMonster != null)
-            // {
-            //     return new MoveAction(bestMonster.Position);
-            // }
+            bestMonster = GetClosestMonster(hero, rankedMonsters);
+
+            if (bestMonster != null)
+            {
+                if (CanCastControlSpell(hero, bestMonster))
+                {
+                    return GetSpellAction(SpellType.Control, bestMonster);
+                }
+
+                return new MoveAction(bestMonster.Position);
+            }
 
             return new MoveAction(hero.StartingPosition);
         }
