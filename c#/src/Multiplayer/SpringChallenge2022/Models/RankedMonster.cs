@@ -2,7 +2,7 @@
 {
     public class RankedMonster
     {
-        public int ThreatLevel { get; }
+        public float ThreatLevel { get; }
 
         public int TurnsToReach { get; }
 
@@ -12,7 +12,7 @@
 
         public RankedMonster(
             Monster monster,
-            int threatLevel,
+            float threatLevel,
             int turnsToReach,
             int shotsNeeded)
         {

@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 11:25
+ // 24/04/2022 06:48
 
 
 namespace SpringChallenge2022
@@ -490,13 +490,14 @@ namespace SpringChallenge2022.Agents
             {
                 if (monster.ThreatFor == 1)
                 {
-                    var threatLevel = 0;
+                    var threatLevel = 0.0f;
 
                     var turnsToReach = monster.GetTurnsToReach(game.MyPlayer.BasePosition);
                     var shotsNeeded = monster.GetHitsNeeded();
 
-                    var distanceScore = 500 * (1 / turnsToReach + 1);
+                    var distanceScore = 500.0f * (1.0f / (turnsToReach + 1));
 
+                    Io.Debug($"{distanceScore}");
                     if (monster.TargetingBase)
                     {
                         threatLevel = 1000 + distanceScore;
@@ -645,7 +646,7 @@ namespace SpringChallenge2022.Models
 {
     public class RankedMonster
     {
-        public int ThreatLevel { get; }
+        public float ThreatLevel { get; }
 
         public int TurnsToReach { get; }
 
@@ -655,7 +656,7 @@ namespace SpringChallenge2022.Models
 
         public RankedMonster(
             Monster monster,
-            int threatLevel,
+            float threatLevel,
             int turnsToReach,
             int shotsNeeded)
         {
