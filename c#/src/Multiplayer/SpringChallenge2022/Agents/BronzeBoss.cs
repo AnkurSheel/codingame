@@ -131,16 +131,34 @@ namespace SpringChallenge2022.Agents
             {
                 if (!actions.ContainsKey(hero.Id))
                 {
-                    if (rankedMonsters.Any())
-                    {
-                        actions.Add(hero.Id, new MoveAction(rankedMonsters[0].Monster.Position));
-                    }
-                    else
-                    {
-                        actions.Add(hero.Id, new MoveAction(hero.StartingPosition));
-                    }
+                    var bestMonster = GetClosestMonster(hero, rankedMonsters);
+
+                    var action = bestMonster != null
+                        ? new MoveAction(bestMonster.Position)
+                        : new MoveAction(hero.StartingPosition);
+
+                    actions.Add(hero.Id, action);
                 }
             }
+        }
+
+        private static Monster? GetClosestMonster(Hero hero, IReadOnlyList<RankedMonster> rankedMonsters)
+        {
+            Monster bestMonster = null;
+            var bestMonsterDistance = int.MaxValue;
+
+            foreach (var rankedMonster in rankedMonsters)
+            {
+                var distance = (int)(hero.Position - rankedMonster.Monster.Position).LengthSquared();
+
+                if (distance < bestMonsterDistance)
+                {
+                    bestMonsterDistance = distance;
+                    bestMonster = rankedMonster.Monster;
+                }
+            }
+
+            return bestMonster;
         }
     }
 }
