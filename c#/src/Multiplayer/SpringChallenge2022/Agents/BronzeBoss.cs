@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using SpringChallenge2022.Actions;
@@ -10,10 +11,12 @@ namespace SpringChallenge2022.Agents
     internal class BronzeBoss
     {
         private Dictionary<int, IAction> _actions;
+        private int _availableMana;
 
         public IReadOnlyList<IAction> GetAction(Game game)
         {
             _actions = new Dictionary<int, IAction>();
+            _availableMana = game.MyPlayer.Mana;
 
             var rankedMonsters = GetRankedMonsters(game);
 
@@ -106,22 +109,38 @@ namespace SpringChallenge2022.Agents
         {
             if (CanCastWindSpell(game, hero, rankedMonster))
             {
-                return new WindSpellAction(game.OpponentPlayer.BasePosition);
+                return GetSpellAction(SpellType.Wind, game, null);
             }
-            // else
-            // {
-            //     return IsMonsterInRange(hero, rankedMonster.Monster, Constants.ControlSpellRange)
-            //         ? new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition)
-            //         : null;
-            // }
+            else if (CanCastControlSpell(game, hero, rankedMonster.Monster))
+            {
+                var distance = (rankedMonster.Monster.Position - game.MyPlayer.BasePosition).Length();
+
+                if (distance > Constants.BaseRadius)
+                {
+                    return GetSpellAction(SpellType.Control, game, rankedMonster.Monster);
+                }
+            }
 
             return null;
         }
 
+        private IAction GetSpellAction(SpellType spellType, Game game, Monster? monster)
+        {
+            _availableMana -= Constants.ManaRequiredForSpell;
+            return spellType switch
+            {
+                SpellType.Wind => new WindSpellAction(game.OpponentPlayer.BasePosition),
+                SpellType.Control => new ControlSpellAction(monster.Id, game.OpponentPlayer.BasePosition),
+                SpellType.Shield => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null),
+                _ => throw new ArgumentOutOfRangeException(nameof(spellType), spellType, null)
+            };
+        }
+
         private bool CanCastWindSpell(Game game, Hero hero, RankedMonster rankedMonster)
-            => game.MyPlayer.Mana >= Constants.ManaRequiredForSpell
-               && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
-               && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
+            => _availableMana >= Constants.ManaRequiredForSpell && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
+
+        private bool CanCastControlSpell(Game game, Hero hero, Monster rankedMonster)
+            => _availableMana >= Constants.ManaRequiredForSpell && IsMonsterInRange(hero, rankedMonster, Constants.ControlSpellRange);
 
         private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)
         {
@@ -214,7 +233,7 @@ namespace SpringChallenge2022.Agents
                 {
                     Io.Debug($"removing {hero.TargetedMonster?.Id} from {hero.Id} because of wind action");
                     hero.TargetedMonster = null;
-                    _actions.Add(hero.Id, new WindSpellAction(game.OpponentPlayer.BasePosition));
+                    _actions.Add(hero.Id, GetSpellAction(SpellType.Wind, game, null));
                     break;
                 }
             }

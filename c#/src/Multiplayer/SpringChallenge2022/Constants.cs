@@ -15,10 +15,12 @@ namespace SpringChallenge2022
         public const int WindSpellRange = 1280;
         public const int BaseRadius = 5000;
         public const int DistanceFromBaseForStartingPosition = BaseRadius + 1000;
+        public const int MaxDistanceFromBaseForHero = BaseRadius + 2000;
         public const float DistanceBaseScore = 10000.0f;
         public const float ShotsNeededBaseScore = 20.0f;
         public const float TargetingBaseBaseScore = 1000.0f;
         public const float NonTargetingBaseBaseScore = 500.0f;
         public const int NumberOfHeroes = 3;
+
     }
 }
