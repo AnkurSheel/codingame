@@ -8,11 +8,18 @@ namespace SpringChallenge2022.Agents
 {
     internal class BronzeBoss
     {
+        private Dictionary<int, IAction> _actions;
+
         public IReadOnlyList<IAction> GetAction(Game game)
         {
-            var actions = new Dictionary<int, IAction>();
+            _actions = new Dictionary<int, IAction>();
 
             var rankedMonsters = GetRankedMonsters(game);
+
+            if (rankedMonsters.Count > Constants.NumberOfHeroes)
+            {
+                AddSpellActionIfTooManyMonsters(game, rankedMonsters);
+            }
 
             Io.Debug($"RankedMonsters {rankedMonsters.Count}");
 
@@ -25,7 +32,7 @@ namespace SpringChallenge2022.Agents
                 if (heroTargetingMonster != null)
                 {
                     var action = GetActionIfHeroAlreadyTargetingMonster(game, heroTargetingMonster, rankedMonster);
-                    actions.Add(heroTargetingMonster.Id, action);
+                    _actions.Add(heroTargetingMonster.Id, action);
                 }
                 else
                 {
@@ -35,14 +42,14 @@ namespace SpringChallenge2022.Agents
                     {
                         hero.TargetedMonster = rankedMonster.Monster;
                         Io.Debug($"hero {hero.Id} targeting {hero.TargetedMonster.Id}");
-                        actions.Add(hero.Id, new MoveAction(rankedMonster.Monster.Position));
+                        _actions.Add(hero.Id, new MoveAction(rankedMonster.Monster.Position));
                     }
                 }
             }
 
-            GetActionIfDoingNothing(game, rankedMonsters, actions);
+            GetActionIfDoingNothing(game, rankedMonsters, _actions);
 
-            return actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+            return _actions.OrderBy(x => x.Key).Select(x => x.Value).ToList();
         }
 
         private IReadOnlyList<RankedMonster> GetRankedMonsters(Game game)
@@ -96,12 +103,7 @@ namespace SpringChallenge2022.Agents
 
         private IAction? GetSpellAction(Game game, Hero hero, RankedMonster rankedMonster)
         {
-            if (game.MyPlayer.Mana < Constants.ManaRequiredForSpell)
-            {
-                return null;
-            }
-
-            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange))
+            if (CanCastWindSpell(game, hero, rankedMonster))
             {
                 return new WindSpellAction(game.OpponentPlayer.BasePosition);
             }
@@ -115,6 +117,11 @@ namespace SpringChallenge2022.Agents
             return null;
         }
 
+        private bool CanCastWindSpell(Game game, Hero hero, RankedMonster rankedMonster)
+            => game.MyPlayer.Mana >= Constants.ManaRequiredForSpell
+               && rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
+               && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange);
+
         private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)
         {
             Hero bestHero = null;
@@ -122,7 +129,7 @@ namespace SpringChallenge2022.Agents
 
             foreach (var hero in game.MyPlayer.Heroes.Values)
             {
-                if (hero.TargetedMonster != null)
+                if (_actions.ContainsKey(hero.Id))
                 {
                     continue;
                 }
@@ -173,6 +180,20 @@ namespace SpringChallenge2022.Agents
             }
 
             return bestMonster;
+        }
+
+        private void AddSpellActionIfTooManyMonsters(Game game, IReadOnlyList<RankedMonster> rankedMonsters)
+        {
+            foreach (var hero in game.MyPlayer.Heroes.Values)
+            {
+                if (rankedMonsters.Any(rankedMonster => CanCastWindSpell(game, hero, rankedMonster)))
+                {
+                    Io.Debug($"removing {hero.TargetedMonster?.Id} from {hero.Id} because of wind action");
+                    hero.TargetedMonster = null;
+                    _actions.Add(hero.Id, new WindSpellAction(game.OpponentPlayer.BasePosition));
+                    break;
+                }
+            }
         }
     }
 }

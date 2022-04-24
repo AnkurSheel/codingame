@@ -18,5 +18,6 @@ namespace SpringChallenge2022
         public const float ShotsNeededBaseScore = 20.0f;
         public const float TargetingBaseBaseScore = 1000.0f;
         public const float NonTargetingBaseBaseScore = 500.0f;
+        public const int NumberOfHeroes = 3;
     }
 }
