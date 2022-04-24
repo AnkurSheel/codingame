@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 08:25
+ // 24/04/2022 08:39
 
 
 namespace SpringChallenge2022
@@ -655,7 +655,9 @@ namespace SpringChallenge2022.Models
             => (int)((Position - position).Length() / Constants.MonsterSpeed);
 
         public int GetHitsNeeded()
-            => Health / Constants.DamagePerHit;
+        {
+            return (int)Math.Ceiling((double)(Health) / Constants.DamagePerHit);
+        }
     }
 }
 

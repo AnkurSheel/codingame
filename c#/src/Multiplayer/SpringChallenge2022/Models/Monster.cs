@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 
 namespace SpringChallenge2022.Models
 {
@@ -36,6 +37,8 @@ namespace SpringChallenge2022.Models
             => (int)((Position - position).Length() / Constants.MonsterSpeed);
 
         public int GetHitsNeeded()
-            => Health / Constants.DamagePerHit;
+        {
+            return (int)Math.Ceiling((double)(Health) / Constants.DamagePerHit);
+        }
     }
 }
