@@ -172,7 +172,7 @@ namespace SpringChallenge2022.Agents
             {
                 if (!_actions.ContainsKey(hero.Id))
                 {
-                    var monstersForWildMana = game.Monsters.Values.Where(monster => IsMonsterOutOfBaseRange(game.MyPlayer.BasePosition, monster)).ToList();
+                    var monstersForWildMana = game.Monsters.Values.Where(monster => IsMonsterValidForWildMana(game.MyPlayer.BasePosition, monster)).ToList();
 
                     var action = GetActionIfDoingNothing(hero, rankedMonsters, monstersForWildMana);
 
@@ -239,11 +239,11 @@ namespace SpringChallenge2022.Agents
             }
         }
 
-        private bool IsMonsterOutOfBaseRange(Vector2 basePosition, Monster monster)
+        private bool IsMonsterValidForWildMana(Vector2 basePosition, Monster monster)
         {
             var distance = (monster.Position - basePosition).Length();
             Io.Debug($"Monster Id {monster.Id} :  Distance {distance}");
-            return distance > Constants.BaseRadius;
+            return distance > Constants.BaseRadius && distance < Constants.MaxDistanceFromBaseForHero;
         }
     }
 }
