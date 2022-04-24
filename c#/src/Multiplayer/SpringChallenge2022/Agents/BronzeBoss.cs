@@ -85,20 +85,34 @@ namespace SpringChallenge2022.Agents
             return distance < range;
         }
 
-        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero heroTargetingMonster, RankedMonster rankedMonster)
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero hero, RankedMonster rankedMonster)
         {
-            Io.Debug($"hero {heroTargetingMonster.Id} already targeted {rankedMonster.Monster.Id}");
+            Io.Debug($"hero {hero.Id} already targeted {rankedMonster.Monster.Id}");
 
-            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
-                && game.MyPlayer.Mana > Constants.ManaRequiredForSpell
-                && IsMonsterInRange(heroTargetingMonster, rankedMonster.Monster, Constants.ControlSpellRange))
+            var spellAction = GetSpellAction(game, hero, rankedMonster);
+
+            return spellAction ?? new MoveAction(rankedMonster.Monster.Position);
+        }
+
+        private IAction? GetSpellAction(Game game, Hero hero, RankedMonster rankedMonster)
+        {
+            if (game.MyPlayer.Mana < Constants.ManaRequiredForSpell)
             {
-                return new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition);
+                return null;
             }
-            else
+
+            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange))
             {
-                return new MoveAction(rankedMonster.Monster.Position);
+                return new WindSpellAction(game.OpponentPlayer.BasePosition);
             }
+            // else
+            // {
+            //     return IsMonsterInRange(hero, rankedMonster.Monster, Constants.ControlSpellRange)
+            //         ? new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition)
+            //         : null;
+            // }
+
+            return null;
         }
 
         private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)

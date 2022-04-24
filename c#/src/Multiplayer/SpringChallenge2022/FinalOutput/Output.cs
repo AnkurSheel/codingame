@@ -10,7 +10,7 @@ using SpringChallenge2022.Actions;
 using System.IO;
 
 
- // 24/04/2022 08:39
+ // 24/04/2022 09:28
 
 
 namespace SpringChallenge2022
@@ -20,9 +20,11 @@ namespace SpringChallenge2022
         public static readonly Random RandomGenerator = new Random(123);
         public static readonly Vector2 BottomRightMap = new Vector2(17630, 9000);
         public const int MonsterSpeed = 400;
+        public const int MonsterBaseDistanceForDamage = 300;
         public const int DamagePerHit = 2;
         public const int ManaRequiredForSpell = 10;
         public const int ControlSpellRange = 2200;
+        public const int WindSpellRange = 1280;
         public const int DistanceFromBaseForStartingPosition = 6000;
         public const float DistanceBaseScore = 10000.0f;
         public const float ShotsNeededBaseScore = 20.0f;
@@ -260,7 +262,7 @@ namespace SpringChallenge2022.Actions
         }
 
         public string GetOutputAction()
-            => $"SPELL WIND {_targetPosition.X} {_targetPosition.Y}";
+            => $"SPELL WIND {(int)_targetPosition.X} {(int)_targetPosition.Y}";
     }
 }
 
@@ -502,20 +504,34 @@ namespace SpringChallenge2022.Agents
             return distance < range;
         }
 
-        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero heroTargetingMonster, RankedMonster rankedMonster)
+        private IAction GetActionIfHeroAlreadyTargetingMonster(Game game, Hero hero, RankedMonster rankedMonster)
         {
-            Io.Debug($"hero {heroTargetingMonster.Id} already targeted {rankedMonster.Monster.Id}");
+            Io.Debug($"hero {hero.Id} already targeted {rankedMonster.Monster.Id}");
 
-            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded
-                && game.MyPlayer.Mana > Constants.ManaRequiredForSpell
-                && IsMonsterInRange(heroTargetingMonster, rankedMonster.Monster, Constants.ControlSpellRange))
+            var spellAction = GetSpellAction(game, hero, rankedMonster);
+
+            return spellAction ?? new MoveAction(rankedMonster.Monster.Position);
+        }
+
+        private IAction? GetSpellAction(Game game, Hero hero, RankedMonster rankedMonster)
+        {
+            if (game.MyPlayer.Mana < Constants.ManaRequiredForSpell)
             {
-                return new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition);
+                return null;
             }
-            else
+
+            if (rankedMonster.TurnsToReach <= rankedMonster.ShotsNeeded && IsMonsterInRange(hero, rankedMonster.Monster, Constants.WindSpellRange))
             {
-                return new MoveAction(rankedMonster.Monster.Position);
+                return new WindSpellAction(game.OpponentPlayer.BasePosition);
             }
+            // else
+            // {
+            //     return IsMonsterInRange(hero, rankedMonster.Monster, Constants.ControlSpellRange)
+            //         ? new ControlSpellAction(rankedMonster.Monster.Id, game.OpponentPlayer.BasePosition)
+            //         : null;
+            // }
+
+            return null;
         }
 
         private Hero GetHeroToTargetMonster(Game game, RankedMonster rankedMonster)
@@ -652,7 +668,7 @@ namespace SpringChallenge2022.Models
         }
 
         public int GetTurnsToReach(Vector2 position)
-            => (int)((Position - position).Length() / Constants.MonsterSpeed);
+            => (int)(((Position - position).Length() - Constants.MonsterBaseDistanceForDamage) / Constants.MonsterSpeed);
 
         public int GetHitsNeeded()
         {
@@ -683,12 +699,30 @@ namespace SpringChallenge2022.Models
             _health = health;
             Mana = mana;
 
+            RemoveTargetedMonsterForHeroes(monsters);
+        }
+
+        private void RemoveTargetedMonsterForHeroes(IReadOnlyList<Monster> monsters)
+        {
             foreach (var hero in Heroes.Values)
             {
-                if (hero.TargetedMonster != null && monsters.All(x => x.Id != hero.TargetedMonster.Id))
+                if (hero.TargetedMonster != null)
                 {
-                    Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
-                    hero.TargetedMonster = null;
+                    if (monsters.All(x => x.Id != hero.TargetedMonster.Id))
+                    {
+                        Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id}");
+                        hero.TargetedMonster = null;
+                    }
+                    else
+                    {
+                        var monster = monsters.Single(x => x.Id == hero.TargetedMonster.Id);
+
+                        if (monster.ThreatFor != 1)
+                        {
+                            Io.Debug($"removing {hero.TargetedMonster.Id} from {hero.Id} because its not threat for base anymore");
+                            hero.TargetedMonster = null;
+                        }
+                    }
                 }
             }
         }

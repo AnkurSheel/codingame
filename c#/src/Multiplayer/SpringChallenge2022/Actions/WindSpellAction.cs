@@ -13,6 +13,6 @@ namespace SpringChallenge2022.Actions
         }
 
         public string GetOutputAction()
-            => $"SPELL WIND {_targetPosition.X} {_targetPosition.Y}";
+            => $"SPELL WIND {(int)_targetPosition.X} {(int)_targetPosition.Y}";
     }
 }
