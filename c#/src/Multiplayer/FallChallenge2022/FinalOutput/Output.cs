@@ -9,14 +9,14 @@ using FallChallenge2022.Action;
 using System.IO;
 
 
- // 14/12/2022 12:43
+ // 14/12/2022 01:04
 
 
 namespace FallChallenge2022
 {
     public static class Constants
     {
-        public static readonly Random RandomGenerator = new Random(123);
+        public static readonly Random RandomGenerator = new Random();
         
     }
 }
@@ -51,6 +51,8 @@ namespace FallChallenge2022
 
             var myUnits = new List<Unit>();
 
+            var myTiles = new List<Position>();
+            
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)
@@ -63,6 +65,7 @@ namespace FallChallenge2022
                     {
                         if (tile.Owner == 1)
                         {
+                            myTiles.Add(tile.Position);
                             var unit = new Unit(tile);
 
                             myUnits.Add(unit);
@@ -71,7 +74,7 @@ namespace FallChallenge2022
                 }
             }
 
-            MyPlayer.ReInit(myMatter, myUnits);
+            MyPlayer.ReInit(myMatter, myUnits, myTiles);
         }
 
         public Tile? GetTileAt(Position position)
@@ -90,14 +93,28 @@ namespace FallChallenge2022
 {
     public class Player
     {
-        private int _matter;
+        public int Matter { get; private set; }
 
         public IReadOnlyList<Unit> Units { get; private set; }
 
-        public void ReInit(int matter, IReadOnlyList<Unit> units)
+        public List<Position> Tiles { get; private set; }
+
+        public void ReInit(int matter, IReadOnlyList<Unit> units, List<Position> tiles)
         {
-            _matter = matter;
+            Matter = matter;
             Units = units;
+            Tiles = tiles;
+            Io.Debug($"Tiles {tiles.Count}");
+        }
+
+        public bool CanSpawn()
+        {
+            return Matter > 10;
+        }
+
+        public Position GetRandomTilePosition()
+        {
+            return Tiles[Constants.RandomGenerator.Next(Tiles.Count)];
         }
     }
 }
@@ -150,6 +167,22 @@ namespace FallChallenge2022.Action
             => $"MOVE 1 {_from.X} {_from.Y} {_to.X} {_to.Y}";
     }
 }
+
+namespace FallChallenge2022.Action
+{
+    public class SpawnAction : IAction
+    {
+        private readonly Position _position;
+
+        public SpawnAction(Position position)
+        {
+            _position = position;
+        }
+
+        public string GetOutputAction()
+            => $"SPAWN 1 {_position.X} {_position.Y}";
+    }
+}
 namespace SpringChallenge2021.Actions
 {
     public class WaitAction : IAction
@@ -180,6 +213,14 @@ namespace FallChallenge2022.Agent
             Io.Debug(game.Height.ToString());
 
             var alreadyTargetedPositions = new HashSet<Position>();
+
+            var availableMatter = game.MyPlayer.Matter;
+
+            while (availableMatter >= 10)
+            {
+                actions.Add(new SpawnAction(game.MyPlayer.GetRandomTilePosition()));
+                availableMatter -= 10;
+            }
 
             foreach (var unit in game.MyPlayer.Units)
             {
@@ -233,7 +274,16 @@ namespace FallChallenge2022.Agent
                 return new MoveAction(unit.Tile.Position, newPosition);
             }
 
-            return new MoveAction(unit.Tile.Position, new Position(game.Width / 2, game.Height / 2));
+            var middlePosition = new Position(game.Width / 2, game.Height / 2);
+
+            if (middlePosition == unit.Tile.Position)
+            {
+                return new MoveAction(unit.Tile.Position, new Position(Constants.RandomGenerator.Next(game.Width - 1), Constants.RandomGenerator.Next(game.Height - 1)));
+            }
+            else
+            {
+                return new MoveAction(unit.Tile.Position, middlePosition);
+            }
         }
 
         private Position? TryGetValidPosition(Game game, Position to, HashSet<Position> alreadyTargetedTiles)

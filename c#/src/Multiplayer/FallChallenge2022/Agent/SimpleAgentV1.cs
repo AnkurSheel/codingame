@@ -16,6 +16,14 @@ namespace FallChallenge2022.Agent
 
             var alreadyTargetedPositions = new HashSet<Position>();
 
+            var availableMatter = game.MyPlayer.Matter;
+
+            while (availableMatter >= 10)
+            {
+                actions.Add(new SpawnAction(game.MyPlayer.GetRandomTilePosition()));
+                availableMatter -= 10;
+            }
+
             foreach (var unit in game.MyPlayer.Units)
             {
                 var action = GetMoveActionForUnit(game, unit, alreadyTargetedPositions);
@@ -68,7 +76,16 @@ namespace FallChallenge2022.Agent
                 return new MoveAction(unit.Tile.Position, newPosition);
             }
 
-            return new MoveAction(unit.Tile.Position, new Position(game.Width / 2, game.Height / 2));
+            var middlePosition = new Position(game.Width / 2, game.Height / 2);
+
+            if (middlePosition == unit.Tile.Position)
+            {
+                return new MoveAction(unit.Tile.Position, new Position(Constants.RandomGenerator.Next(game.Width - 1), Constants.RandomGenerator.Next(game.Height - 1)));
+            }
+            else
+            {
+                return new MoveAction(unit.Tile.Position, middlePosition);
+            }
         }
 
         private Position? TryGetValidPosition(Game game, Position to, HashSet<Position> alreadyTargetedTiles)
