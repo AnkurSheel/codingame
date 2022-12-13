@@ -1,9 +1,10 @@
+using System.Collections.Generic;
 using SpringChallenge2021.Actions;
 
 namespace FallChallenge2022.Agent
 {
     public interface IAgent
     {
-        IAction GetAction(Game game);
+        IReadOnlyList<IAction> GetActions(Game game);
     }
 }

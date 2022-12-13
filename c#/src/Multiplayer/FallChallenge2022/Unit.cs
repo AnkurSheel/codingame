@@ -1,14 +1,15 @@
 ﻿namespace FallChallenge2022
 {
-    internal class Unit
+    public class Unit
     {
-        private readonly int _posX;
-        private readonly int _posY;
+        public int PosX { get; }
 
-        public Unit(int posX, int posY)
+        public int PosY { get; }
+
+        public Unit(int posY, int posX)
         {
-            _posX = posX;
-            _posY = posY;
+            PosX = posX;
+            PosY = posY;
         }
     }
 }

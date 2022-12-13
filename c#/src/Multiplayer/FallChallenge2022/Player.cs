@@ -2,15 +2,16 @@
 
 namespace FallChallenge2022
 {
-    internal class Player
+    public class Player
     {
         private int _matter;
-        private IReadOnlyList<Unit> _units;
+
+        public IReadOnlyList<Unit> Units { get; private set; }
 
         public void ReInit(int matter, IReadOnlyList<Unit> units)
         {
             _matter = matter;
-            _units = units;
+            Units = units;
         }
     }
 }

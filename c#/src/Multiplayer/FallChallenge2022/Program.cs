@@ -1,4 +1,5 @@
-﻿using FallChallenge2022.Agent;
+﻿using System.Linq;
+using FallChallenge2022.Agent;
 using FallChallenge2022.Common.Services;
 
 namespace FallChallenge2022
@@ -15,8 +16,9 @@ namespace FallChallenge2022
             {
                 game.Parse();
 
-                var action = agent.GetAction(game);
-                Io.WriteLine(action.GetOutputAction());
+                var actions = agent.GetActions(game);
+                var output = string.Join(";", actions.Select(x => x.GetOutputAction()));
+                Io.WriteLine(output);
             }
         }
     }

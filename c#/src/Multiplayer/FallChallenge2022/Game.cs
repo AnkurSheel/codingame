@@ -5,16 +5,18 @@ namespace FallChallenge2022
 {
     public class Game
     {
-        private readonly int _width;
-        private readonly int _height;
-        private readonly Player _myPlayer;
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public Player MyPlayer { get; }
 
         public Game()
         {
             var inputs = Io.ReadLine().Split(' ');
-            _width = int.Parse(inputs[0]);
-            _height = int.Parse(inputs[1]);
-            _myPlayer = new Player();
+            Width = int.Parse(inputs[0]);
+            Height = int.Parse(inputs[1]);
+            MyPlayer = new Player();
         }
 
         public void Parse()
@@ -25,9 +27,9 @@ namespace FallChallenge2022
 
             var myUnits = new List<Unit>();
 
-            for (var i = 0; i < _height; i++)
+            for (var i = 0; i < Height; i++)
             {
-                for (var j = 0; j < _width; j++)
+                for (var j = 0; j < Width; j++)
                 {
                     inputs = Io.ReadLine().Split(' ');
                     var scrapAmount = int.Parse(inputs[0]);
@@ -50,7 +52,7 @@ namespace FallChallenge2022
                 }
             }
 
-            _myPlayer.ReInit(myMatter, myUnits);
+            MyPlayer.ReInit(myMatter, myUnits);
         }
     }
 }

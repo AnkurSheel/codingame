@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using FallChallenge2022.Common.Services;
+using System.Linq;
 using FallChallenge2022.Agent;
 using SpringChallenge2021.Actions;
+using FallChallenge2022.Action;
 using System.IO;
 
 
- // 13/12/2022 10:49
+ // 13/12/2022 11:12
 
 
 namespace FallChallenge2022
@@ -22,16 +24,18 @@ namespace FallChallenge2022
 {
     public class Game
     {
-        private readonly int _width;
-        private readonly int _height;
-        private readonly Player _myPlayer;
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public Player MyPlayer { get; }
 
         public Game()
         {
             var inputs = Io.ReadLine().Split(' ');
-            _width = int.Parse(inputs[0]);
-            _height = int.Parse(inputs[1]);
-            _myPlayer = new Player();
+            Width = int.Parse(inputs[0]);
+            Height = int.Parse(inputs[1]);
+            MyPlayer = new Player();
         }
 
         public void Parse()
@@ -42,9 +46,9 @@ namespace FallChallenge2022
 
             var myUnits = new List<Unit>();
 
-            for (var i = 0; i < _height; i++)
+            for (var i = 0; i < Height; i++)
             {
-                for (var j = 0; j < _width; j++)
+                for (var j = 0; j < Width; j++)
                 {
                     inputs = Io.ReadLine().Split(' ');
                     var scrapAmount = int.Parse(inputs[0]);
@@ -67,22 +71,23 @@ namespace FallChallenge2022
                 }
             }
 
-            _myPlayer.ReInit(myMatter, myUnits);
+            MyPlayer.ReInit(myMatter, myUnits);
         }
     }
 }
 
 namespace FallChallenge2022
 {
-    internal class Player
+    public class Player
     {
         private int _matter;
-        private IReadOnlyList<Unit> _units;
+
+        public IReadOnlyList<Unit> Units { get; private set; }
 
         public void ReInit(int matter, IReadOnlyList<Unit> units)
         {
             _matter = matter;
-            _units = units;
+            Units = units;
         }
     }
 }
@@ -101,23 +106,25 @@ namespace FallChallenge2022
             {
                 game.Parse();
 
-                var action = agent.GetAction(game);
-                Io.WriteLine(action.GetOutputAction());
+                var actions = agent.GetActions(game);
+                var output = string.Join(";", actions.Select(x => x.GetOutputAction()));
+                Io.WriteLine(output);
             }
         }
     }
 }
 namespace FallChallenge2022
 {
-    internal class Unit
+    public class Unit
     {
-        private readonly int _posX;
-        private readonly int _posY;
+        public int PosX { get; }
 
-        public Unit(int posX, int posY)
+        public int PosY { get; }
+
+        public Unit(int posY, int posX)
         {
-            _posX = posX;
-            _posY = posY;
+            PosX = posX;
+            PosY = posY;
         }
     }
 }
@@ -126,6 +133,32 @@ namespace SpringChallenge2021.Actions
     public interface IAction
     {
         string GetOutputAction();
+    }
+}
+
+namespace FallChallenge2022.Action
+{
+    public class MoveAction : IAction
+    {
+        private readonly int _fromPosX;
+        private readonly int _fromPosY;
+        private readonly int _toPosX;
+        private readonly int _toPosY;
+
+        public MoveAction(
+            int fromPosX,
+            int fromPosY,
+            int toPosX,
+            int toPosY)
+        {
+            _fromPosX = fromPosX;
+            _fromPosY = fromPosY;
+            _toPosX = toPosX;
+            _toPosY = toPosY;
+        }
+
+        public string GetOutputAction()
+            => $"MOVE 1 {_fromPosX} {_fromPosY} {_toPosX} {_toPosY}";
     }
 }
 namespace SpringChallenge2021.Actions
@@ -143,7 +176,7 @@ namespace FallChallenge2022.Agent
 {
     public interface IAgent
     {
-        IAction GetAction(Game game);
+        IReadOnlyList<IAction> GetActions(Game game);
     }
 }
 
@@ -151,9 +184,25 @@ namespace FallChallenge2022.Agent
 {
     public class SimpleAgentV1 : IAgent
     {
-        public IAction GetAction(Game game)
+        public IReadOnlyList<IAction> GetActions(Game game)
         {
-            return new WaitAction();
+            var actions = new List<IAction>();
+            Io.Debug(game.Width.ToString());
+            Io.Debug(game.Height.ToString());
+            
+            foreach (var unit in game.MyPlayer.Units)
+            {
+                var nextX = Constants.RandomGenerator.Next(game.Width - 1);
+                var nextY = Constants.RandomGenerator.Next(game.Height - 1);
+                actions.Add(new MoveAction(unit.PosX, unit.PosY, nextX, nextY));
+            }
+
+            if (actions.Count == 0)
+            {
+                actions.Add(new WaitAction());
+            }
+            
+            return actions;
         }
     }
 }
@@ -161,7 +210,7 @@ namespace FallChallenge2022.Common
 {
     public static class Constants
     {
-        public const bool IsDebugOn = false;
+        public const bool IsDebugOn = true;
 
         public const bool IsForInput = false;
 
