@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FallChallenge2022.Common.Services;
+using FallChallenge2022.Models;
 using System.Linq;
 using FallChallenge2022.Agent;
 using SpringChallenge2021.Actions;
@@ -8,7 +9,7 @@ using FallChallenge2022.Action;
 using System.IO;
 
 
- // 13/12/2022 11:12
+ // 14/12/2022 12:43
 
 
 namespace FallChallenge2022
@@ -24,6 +25,8 @@ namespace FallChallenge2022
 {
     public class Game
     {
+        private readonly Tile[,] _board;
+
         public int Width { get; }
 
         public int Height { get; }
@@ -36,6 +39,8 @@ namespace FallChallenge2022
             Width = int.Parse(inputs[0]);
             Height = int.Parse(inputs[1]);
             MyPlayer = new Player();
+
+            _board = new Tile[Width, Height];
         }
 
         public void Parse()
@@ -50,21 +55,16 @@ namespace FallChallenge2022
             {
                 for (var j = 0; j < Width; j++)
                 {
-                    inputs = Io.ReadLine().Split(' ');
-                    var scrapAmount = int.Parse(inputs[0]);
-                    var owner = int.Parse(inputs[1]); // 1 = me, 0 = foe, -1 = neutral
-                    var numberOfUnits = int.Parse(inputs[2]);
-                    var recycler = int.Parse(inputs[3]);
-                    var canBuild = int.Parse(inputs[4]);
-                    var canSpawn = int.Parse(inputs[5]);
-                    var inRangeOfRecycler = int.Parse(inputs[6]);
+                    var tile = new Tile(j, i);
 
-                    for (var k = 0; k < numberOfUnits; k++)
+                    _board[j, i] = tile;
+
+                    for (var k = 0; k < tile.NumberOfUnits; k++)
                     {
-                        var unit = new Unit(i, j);
-
-                        if (owner == 1)
+                        if (tile.Owner == 1)
                         {
+                            var unit = new Unit(tile);
+
                             myUnits.Add(unit);
                         }
                     }
@@ -72,6 +72,16 @@ namespace FallChallenge2022
             }
 
             MyPlayer.ReInit(myMatter, myUnits);
+        }
+
+        public Tile? GetTileAt(Position position)
+        {
+            if (position.X >= 0 && position.X < Width && position.Y >= 0 && position.Y < Height)
+            {
+                return _board[position.X, position.Y];
+            }
+
+            return null;
         }
     }
 }
@@ -113,21 +123,6 @@ namespace FallChallenge2022
         }
     }
 }
-namespace FallChallenge2022
-{
-    public class Unit
-    {
-        public int PosX { get; }
-
-        public int PosY { get; }
-
-        public Unit(int posY, int posX)
-        {
-            PosX = posX;
-            PosY = posY;
-        }
-    }
-}
 namespace SpringChallenge2021.Actions
 {
     public interface IAction
@@ -140,25 +135,19 @@ namespace FallChallenge2022.Action
 {
     public class MoveAction : IAction
     {
-        private readonly int _fromPosX;
-        private readonly int _fromPosY;
-        private readonly int _toPosX;
-        private readonly int _toPosY;
+        private readonly Position _from;
+        private readonly Position _to;
 
         public MoveAction(
-            int fromPosX,
-            int fromPosY,
-            int toPosX,
-            int toPosY)
+            Position from,
+            Position to)
         {
-            _fromPosX = fromPosX;
-            _fromPosY = fromPosY;
-            _toPosX = toPosX;
-            _toPosY = toPosY;
+            _from = from;
+            _to = to;
         }
 
         public string GetOutputAction()
-            => $"MOVE 1 {_fromPosX} {_fromPosY} {_toPosX} {_toPosY}";
+            => $"MOVE 1 {_from.X} {_from.Y} {_to.X} {_to.Y}";
     }
 }
 namespace SpringChallenge2021.Actions
@@ -189,20 +178,71 @@ namespace FallChallenge2022.Agent
             var actions = new List<IAction>();
             Io.Debug(game.Width.ToString());
             Io.Debug(game.Height.ToString());
-            
+
+            var alreadyTargetedPositions = new HashSet<Position>();
+
             foreach (var unit in game.MyPlayer.Units)
             {
-                var nextX = Constants.RandomGenerator.Next(game.Width - 1);
-                var nextY = Constants.RandomGenerator.Next(game.Height - 1);
-                actions.Add(new MoveAction(unit.PosX, unit.PosY, nextX, nextY));
+                var action = GetMoveActionForUnit(game, unit, alreadyTargetedPositions);
+
+                if (action != null)
+                {
+                    actions.Add(action);
+                }
             }
 
             if (actions.Count == 0)
             {
                 actions.Add(new WaitAction());
             }
-            
+
             return actions;
+        }
+
+        private IAction GetMoveActionForUnit(Game game, Unit unit, HashSet<Position> alreadyTargetedPositions)
+        {
+            var newPosition = TryGetValidPosition(game, new Position(unit.Tile.Position.X - 1, unit.Tile.Position.Y), alreadyTargetedPositions);
+
+            if (newPosition != null)
+            {
+                alreadyTargetedPositions.Add(newPosition);
+                return new MoveAction(unit.Tile.Position, newPosition);
+            }
+
+            newPosition = TryGetValidPosition(game, new Position(unit.Tile.Position.X + 1, unit.Tile.Position.Y), alreadyTargetedPositions);
+
+            if (newPosition != null)
+            {
+                alreadyTargetedPositions.Add(newPosition);
+                return new MoveAction(unit.Tile.Position, newPosition);
+            }
+
+            newPosition = TryGetValidPosition(game, new Position(unit.Tile.Position.X, unit.Tile.Position.Y - 1), alreadyTargetedPositions);
+
+            if (newPosition != null)
+            {
+                alreadyTargetedPositions.Add(newPosition);
+                return new MoveAction(unit.Tile.Position, newPosition);
+            }
+
+            newPosition = TryGetValidPosition(game, new Position(unit.Tile.Position.X, unit.Tile.Position.Y + 1), alreadyTargetedPositions);
+
+            if (newPosition != null)
+            {
+                alreadyTargetedPositions.Add(newPosition);
+                return new MoveAction(unit.Tile.Position, newPosition);
+            }
+
+            return new MoveAction(unit.Tile.Position, new Position(game.Width / 2, game.Height / 2));
+        }
+
+        private Position? TryGetValidPosition(Game game, Position to, HashSet<Position> alreadyTargetedTiles)
+        {
+            var newTile = game.GetTileAt(to);
+
+            return newTile != null && newTile.Owner != 1 && newTile.ScrapAmount > 0 && !alreadyTargetedTiles.Contains(newTile.Position)
+                ? newTile.Position
+                : null;
         }
     }
 }
@@ -210,7 +250,7 @@ namespace FallChallenge2022.Common
 {
     public static class Constants
     {
-        public const bool IsDebugOn = true;
+        public const bool IsDebugOn = false;
 
         public const bool IsForInput = false;
 
@@ -218,6 +258,47 @@ namespace FallChallenge2022.Common
 
         public const bool ShowInput = false;
     }
+}
+namespace FallChallenge2022.Models
+{
+    public record Position(int X, int Y);
+}
+
+namespace FallChallenge2022.Models
+{
+    public class Tile
+    {
+        public int ScrapAmount { get; set; }
+
+        public int Owner { get; set; }
+
+        public int NumberOfUnits { get; set; }
+
+        public Position Position { get; }
+
+        private int _recycler;
+        private int _canBuild;
+        private int _canSpawn;
+        private int _inRangeOfRecycler;
+
+        public Tile(int posX, int posY)
+        {
+            Position = new Position(posX, posY);
+            
+            var inputs = Io.ReadLine().Split(' ');
+            ScrapAmount = int.Parse(inputs[0]);
+            Owner = int.Parse(inputs[1]); // 1 = me, 0 = foe, -1 = neutral
+            NumberOfUnits = int.Parse(inputs[2]);
+            _recycler = int.Parse(inputs[3]);
+            _canBuild = int.Parse(inputs[4]);
+            _canSpawn = int.Parse(inputs[5]);
+            _inRangeOfRecycler = int.Parse(inputs[6]);
+        }
+    }
+}
+namespace FallChallenge2022.Models
+{
+    public record Unit(Tile Tile);
 }
 
 namespace FallChallenge2022.Common.Services

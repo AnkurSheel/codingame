@@ -1,27 +1,22 @@
-﻿using SpringChallenge2021.Actions;
+﻿using FallChallenge2022.Models;
+using SpringChallenge2021.Actions;
 
 namespace FallChallenge2022.Action
 {
     public class MoveAction : IAction
     {
-        private readonly int _fromPosX;
-        private readonly int _fromPosY;
-        private readonly int _toPosX;
-        private readonly int _toPosY;
+        private readonly Position _from;
+        private readonly Position _to;
 
         public MoveAction(
-            int fromPosX,
-            int fromPosY,
-            int toPosX,
-            int toPosY)
+            Position from,
+            Position to)
         {
-            _fromPosX = fromPosX;
-            _fromPosY = fromPosY;
-            _toPosX = toPosX;
-            _toPosY = toPosY;
+            _from = from;
+            _to = to;
         }
 
         public string GetOutputAction()
-            => $"MOVE 1 {_fromPosX} {_fromPosY} {_toPosX} {_toPosY}";
+            => $"MOVE 1 {_from.X} {_from.Y} {_to.X} {_to.Y}";
     }
 }

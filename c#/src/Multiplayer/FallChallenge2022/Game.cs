@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
 using FallChallenge2022.Common.Services;
+using FallChallenge2022.Models;
 
 namespace FallChallenge2022
 {
     public class Game
     {
+        private readonly Tile[,] _board;
+
         public int Width { get; }
 
         public int Height { get; }
@@ -17,6 +20,8 @@ namespace FallChallenge2022
             Width = int.Parse(inputs[0]);
             Height = int.Parse(inputs[1]);
             MyPlayer = new Player();
+
+            _board = new Tile[Width, Height];
         }
 
         public void Parse()
@@ -31,21 +36,16 @@ namespace FallChallenge2022
             {
                 for (var j = 0; j < Width; j++)
                 {
-                    inputs = Io.ReadLine().Split(' ');
-                    var scrapAmount = int.Parse(inputs[0]);
-                    var owner = int.Parse(inputs[1]); // 1 = me, 0 = foe, -1 = neutral
-                    var numberOfUnits = int.Parse(inputs[2]);
-                    var recycler = int.Parse(inputs[3]);
-                    var canBuild = int.Parse(inputs[4]);
-                    var canSpawn = int.Parse(inputs[5]);
-                    var inRangeOfRecycler = int.Parse(inputs[6]);
+                    var tile = new Tile(j, i);
 
-                    for (var k = 0; k < numberOfUnits; k++)
+                    _board[j, i] = tile;
+
+                    for (var k = 0; k < tile.NumberOfUnits; k++)
                     {
-                        var unit = new Unit(i, j);
-
-                        if (owner == 1)
+                        if (tile.Owner == 1)
                         {
+                            var unit = new Unit(tile);
+
                             myUnits.Add(unit);
                         }
                     }
@@ -53,6 +53,16 @@ namespace FallChallenge2022
             }
 
             MyPlayer.ReInit(myMatter, myUnits);
+        }
+
+        public Tile? GetTileAt(Position position)
+        {
+            if (position.X >= 0 && position.X < Width && position.Y >= 0 && position.Y < Height)
+            {
+                return _board[position.X, position.Y];
+            }
+
+            return null;
         }
     }
 }

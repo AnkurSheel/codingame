@@ -2,7 +2,7 @@
 {
     public static class Constants
     {
-        public const bool IsDebugOn = true;
+        public const bool IsDebugOn = false;
 
         public const bool IsForInput = false;
 
