@@ -9,7 +9,7 @@ using FallChallenge2022.Action;
 using System.IO;
 
 
- // 14/12/2022 01:04
+ // 14/12/2022 01:21
 
 
 namespace FallChallenge2022
@@ -52,7 +52,7 @@ namespace FallChallenge2022
             var myUnits = new List<Unit>();
 
             var myTiles = new List<Position>();
-            
+
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)
@@ -61,11 +61,12 @@ namespace FallChallenge2022
 
                     _board[j, i] = tile;
 
-                    for (var k = 0; k < tile.NumberOfUnits; k++)
+                    if (tile.Owner == 1)
                     {
-                        if (tile.Owner == 1)
+                        myTiles.Add(tile.Position);
+
+                        for (var k = 0; k < tile.NumberOfUnits; k++)
                         {
-                            myTiles.Add(tile.Position);
                             var unit = new Unit(tile);
 
                             myUnits.Add(unit);
@@ -93,28 +94,23 @@ namespace FallChallenge2022
 {
     public class Player
     {
+        private List<Position> _tiles;
+
         public int Matter { get; private set; }
 
         public IReadOnlyList<Unit> Units { get; private set; }
-
-        public List<Position> Tiles { get; private set; }
 
         public void ReInit(int matter, IReadOnlyList<Unit> units, List<Position> tiles)
         {
             Matter = matter;
             Units = units;
-            Tiles = tiles;
-            Io.Debug($"Tiles {tiles.Count}");
-        }
-
-        public bool CanSpawn()
-        {
-            return Matter > 10;
+            _tiles = tiles;
         }
 
         public Position GetRandomTilePosition()
         {
-            return Tiles[Constants.RandomGenerator.Next(Tiles.Count)];
+            Io.Debug($"{Units.Count} {_tiles.Count}");
+           return _tiles[Constants.RandomGenerator.Next(_tiles.Count)];
         }
     }
 }

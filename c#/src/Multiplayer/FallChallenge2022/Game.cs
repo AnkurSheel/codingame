@@ -33,7 +33,7 @@ namespace FallChallenge2022
             var myUnits = new List<Unit>();
 
             var myTiles = new List<Position>();
-            
+
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)
@@ -42,11 +42,12 @@ namespace FallChallenge2022
 
                     _board[j, i] = tile;
 
-                    for (var k = 0; k < tile.NumberOfUnits; k++)
+                    if (tile.Owner == 1)
                     {
-                        if (tile.Owner == 1)
+                        myTiles.Add(tile.Position);
+
+                        for (var k = 0; k < tile.NumberOfUnits; k++)
                         {
-                            myTiles.Add(tile.Position);
                             var unit = new Unit(tile);
 
                             myUnits.Add(unit);

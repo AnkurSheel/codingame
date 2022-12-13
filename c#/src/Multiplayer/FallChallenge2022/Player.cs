@@ -6,28 +6,23 @@ namespace FallChallenge2022
 {
     public class Player
     {
+        private List<Position> _tiles;
+
         public int Matter { get; private set; }
 
         public IReadOnlyList<Unit> Units { get; private set; }
-
-        public List<Position> Tiles { get; private set; }
 
         public void ReInit(int matter, IReadOnlyList<Unit> units, List<Position> tiles)
         {
             Matter = matter;
             Units = units;
-            Tiles = tiles;
-            Io.Debug($"Tiles {tiles.Count}");
-        }
-
-        public bool CanSpawn()
-        {
-            return Matter > 10;
+            _tiles = tiles;
         }
 
         public Position GetRandomTilePosition()
         {
-            return Tiles[Constants.RandomGenerator.Next(Tiles.Count)];
+            Io.Debug($"{Units.Count} {_tiles.Count}");
+           return _tiles[Constants.RandomGenerator.Next(_tiles.Count)];
         }
     }
 }
